@@ -1,26 +1,73 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-wholara-green: #2C4A35;
+  --color-wholara-green-deep: #1f3527;
+  --color-wholara-terracotta: #C4673A;
+  --color-wholara-terracotta-deep: #a8542d;
+  --color-wholara-cream: #F5F0E8;
+  --color-wholara-cream-deep: #ece4d4;
+  --color-wholara-sage: #7D9B76;
+  --color-wholara-sage-soft: #a8bda1;
+
+  --color-background: #F5F0E8;
+  --color-foreground: #2C4A35;
+
+  --font-serif: var(--font-fraunces), ui-serif, Georgia, serif;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  background: var(--color-wholara-cream);
+  color: var(--color-wholara-green);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.font-display {
+  font-family: var(--font-serif);
+  letter-spacing: -0.02em;
+}
+
+/* Subtle organic grain / paper texture using layered radial gradients */
+.texture-paper {
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(44, 74, 53, 0.05) 0, transparent 35%),
+    radial-gradient(circle at 80% 70%, rgba(196, 103, 58, 0.06) 0, transparent 40%),
+    radial-gradient(circle at 50% 90%, rgba(125, 155, 118, 0.05) 0, transparent 45%);
+}
+
+.texture-grain {
+  position: relative;
+}
+.texture-grain::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.35;
+  mix-blend-mode: multiply;
+  background-image:
+    radial-gradient(rgba(44, 74, 53, 0.18) 1px, transparent 1px),
+    radial-gradient(rgba(44, 74, 53, 0.12) 1px, transparent 1px);
+  background-size: 14px 14px, 22px 22px;
+  background-position: 0 0, 7px 11px;
+}
+
+.texture-weave {
+  background-color: var(--color-wholara-cream);
+  background-image:
+    repeating-linear-gradient(45deg, rgba(44, 74, 53, 0.04) 0 1px, transparent 1px 12px),
+    repeating-linear-gradient(-45deg, rgba(196, 103, 58, 0.035) 0 1px, transparent 1px 14px);
+}
+
+.cta-shadow {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.2) inset,
+    0 10px 24px -12px rgba(44, 74, 53, 0.45);
 }
