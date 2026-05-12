@@ -1,19 +1,11 @@
 import type { Metadata } from "next";
-import { MarketingShell } from "@/components/marketing-shell";
+import { ComingSoonPlaceholder } from "@/components/coming-soon-placeholder";
 
 export const metadata: Metadata = {
   title: "About | Wholara",
-  description: "Learn about Wholara and the team behind it.",
+  description: "Learn about Wholara and the team behind it — coming soon.",
 };
 
 export default function AboutPage() {
-  return (
-    <MarketingShell title="About">
-      <p>
-        Tell your story here—mission, credentials, and how you help clients.
-        This placeholder keeps the About tab working until you publish full
-        content.
-      </p>
-    </MarketingShell>
-  );
+  return <ComingSoonPlaceholder eyebrow="About" />;
 }
