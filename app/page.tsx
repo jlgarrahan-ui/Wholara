@@ -105,10 +105,10 @@ function Hero() {
             <ArrowIcon className="h-4 w-4" />
           </Link>
           <Link
-            href="/coaching"
+            href="/individual-consulting"
             className="inline-flex items-center justify-center gap-2 rounded-full border border-wholara-green/30 bg-wholara-cream/40 px-8 py-4 text-base font-medium text-wholara-green transition-colors hover:border-wholara-green hover:bg-wholara-green hover:text-wholara-cream"
           >
-            1:1 Coaching
+            Individual Consulting
           </Link>
           <Link
             href="/corporate-wellness"
@@ -217,10 +217,10 @@ function PhilosophyStrip() {
                 <ArrowIcon className="h-3.5 w-3.5" />
               </Link>
               <Link
-                href="/coaching"
+                href="/individual-consulting"
                 className="inline-flex items-center justify-center gap-2 rounded-full border border-wholara-cream/30 px-6 py-3 text-sm font-medium text-wholara-cream transition-colors hover:bg-wholara-cream hover:text-wholara-green"
               >
-                1:1 Coaching
+                Individual Consulting
               </Link>
             </div>
           </div>
