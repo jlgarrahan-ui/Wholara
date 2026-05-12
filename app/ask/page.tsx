@@ -18,11 +18,12 @@ export default function AskPage() {
               Ask Wholara
             </h1>
             <p className="mt-2 max-w-xl text-sm leading-relaxed text-wholara-green/70 sm:text-[0.9375rem]">
-              We use AI to go through our unique science-backed database to find
-              what&rsquo;s relevant for your concerns.
+              A conversation, not a search box. Tell Wholara what&rsquo;s going
+              on and she&rsquo;ll ask the right questions before pulling from a
+              clinical nutrition knowledge base.
             </p>
           </div>
-          <div className="flex min-h-[420px] flex-1 flex-col rounded-3xl border border-wholara-green/10 bg-wholara-cream-deep/30 p-4 sm:min-h-[min(70vh,560px)] sm:p-6">
+          <div className="flex min-h-[500px] flex-1 flex-col rounded-3xl border border-wholara-green/10 bg-wholara-cream-deep/30 p-4 sm:min-h-[min(75vh,640px)] sm:p-6">
             <AskConsentGate setupMessage={setupMessage} />
           </div>
         </div>

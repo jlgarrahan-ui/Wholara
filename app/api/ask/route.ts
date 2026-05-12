@@ -1,21 +1,17 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { getServiceSupabase } from "@/lib/supabase/service";
-import { WHOLARA_SYSTEM_PROMPT } from "@/lib/chat/wholara-system-prompt";
+import {
+  WHOLARA_SYSTEM_PROMPT,
+  WHOLARA_INTAKE_INSTRUCTIONS,
+} from "@/lib/chat/wholara-system-prompt";
 
 export const runtime = "nodejs";
 
-/** Default when ANTHROPIC_MODEL is unset (3.5 Sonnet snapshots are retired). */
 const DEFAULT_ANTHROPIC_MODEL = "claude-sonnet-4-6";
-
-function formatUnknownError(e: unknown): string {
-  if (e instanceof Error) return e.message;
-  if (typeof e === "object" && e !== null && "message" in e) {
-    const m = (e as { message: unknown }).message;
-    if (typeof m === "string") return m;
-  }
-  return "Unexpected server error";
-}
+const MATCH_COUNT = 20;
+const MATCH_THRESHOLD = 0.3;
+const MAX_TOOL_TURNS = 2;
 
 type ChatMessageRow = {
   id: string;
@@ -25,9 +21,32 @@ type ChatMessageRow = {
   created_at: string;
 };
 
-function extractAnthropicText(
-  message: Anthropic.Messages.Message,
-): string {
+type DocumentMatch = {
+  id?: number;
+  filename?: string;
+  chunk_index?: number;
+  content: string;
+  similarity?: number;
+};
+
+const SEARCH_TOOL: Anthropic.Messages.Tool = {
+  name: "search_knowledge_base",
+  description:
+    "Search Wholara's clinical nutrition knowledge base for evidence-based content relevant to the user's situation. Only call this AFTER you have gathered enough intake context (typically 2-3 user exchanges covering medications, stress, sleep, digestion, energy, diet, and other clinically relevant factors). Build the query from everything the user has shared so far — symptoms, context, suspected root causes, and relevant body systems. The richer and more specific the query, the better the retrieved content.",
+  input_schema: {
+    type: "object",
+    properties: {
+      query: {
+        type: "string",
+        description:
+          "A detailed, specific search query built from the user's full description. Include symptoms, context, and suspected root causes.",
+      },
+    },
+    required: ["query"],
+  },
+};
+
+function extractText(message: Anthropic.Messages.Message): string {
   return message.content
     .filter((b): b is Anthropic.Messages.TextBlock => b.type === "text")
     .map((b) => b.text)
@@ -35,45 +54,121 @@ function extractAnthropicText(
     .trim();
 }
 
-export async function POST(req: Request) {
-  const raw = await req.text();
-  const proxyUrl = process.env.SUPABASE_CHAT_FUNCTION_URL?.trim();
-  if (proxyUrl) {
-    const headers: Record<string, string> = {
+function findToolUse(
+  message: Anthropic.Messages.Message,
+): Anthropic.Messages.ToolUseBlock | null {
+  for (const block of message.content) {
+    if (block.type === "tool_use") return block;
+  }
+  return null;
+}
+
+async function embedQuery(text: string, apiKey: string): Promise<number[]> {
+  const res = await fetch("https://api.voyageai.com/v1/embeddings", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      input: [text],
+      model: "voyage-3",
+      input_type: "query",
+    }),
+  });
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    throw new Error(
+      `Voyage embeddings failed (${res.status}): ${detail.slice(0, 300)}`,
+    );
+  }
+  const json = (await res.json()) as {
+    data?: Array<{ embedding?: number[] }>;
+  };
+  const vec = json.data?.[0]?.embedding;
+  if (!Array.isArray(vec) || vec.length !== 1024) {
+    throw new Error(
+      `Voyage returned an embedding of length ${vec?.length ?? "n/a"} (expected 1024).`,
+    );
+  }
+  return vec;
+}
+
+async function searchKnowledgeBase(
+  query: string,
+  supabase: ReturnType<typeof getServiceSupabase>,
+  voyageKey: string,
+): Promise<{ matches: DocumentMatch[]; contextBlock: string }> {
+  const embedding = await embedQuery(query, voyageKey);
+  const { data, error } = await supabase.rpc("match_documents", {
+    query_embedding: embedding,
+    match_threshold: MATCH_THRESHOLD,
+    match_count: MATCH_COUNT,
+  });
+  if (error) {
+    throw new Error(`match_documents: ${error.message}`);
+  }
+  const matches: DocumentMatch[] = Array.isArray(data)
+    ? (data as DocumentMatch[])
+    : [];
+
+  if (matches.length === 0) {
+    return {
+      matches,
+      contextBlock:
+        "No matching content was retrieved from the knowledge base. Be transparent with the user that you do not have specific source material and answer based on general clinical nutrition principles.",
     };
-    const bearer =
-      process.env.SUPABASE_CHAT_FUNCTION_BEARER?.trim() ||
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
-    if (bearer) {
-      headers.Authorization = `Bearer ${bearer}`;
-      headers.apikey = bearer;
-    }
-    const proxied = await fetch(proxyUrl, { method: "POST", headers, body: raw });
-    const out = await proxied.text();
-    return new NextResponse(out, {
-      status: proxied.status,
-      headers: {
-        "Content-Type":
-          proxied.headers.get("content-type") ?? "application/json",
-      },
-    });
   }
 
+  const contextBlock = matches
+    .map((m, i) => {
+      const head =
+        m.filename != null
+          ? `Source ${i + 1} — ${m.filename}${m.chunk_index != null ? ` (chunk ${m.chunk_index})` : ""}`
+          : `Source ${i + 1}`;
+      const sim =
+        typeof m.similarity === "number"
+          ? ` · similarity ${m.similarity.toFixed(3)}`
+          : "";
+      return `[${head}${sim}]\n${m.content}`;
+    })
+    .join("\n\n---\n\n");
+
+  return { matches, contextBlock };
+}
+
+export async function POST(req: Request) {
   let body: { message?: unknown; conversationId?: unknown };
   try {
-    body = JSON.parse(raw) as { message?: unknown; conversationId?: unknown };
+    body = (await req.json()) as {
+      message?: unknown;
+      conversationId?: unknown;
+    };
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const message =
-    typeof body.message === "string" ? body.message.trim() : "";
+  const message = typeof body.message === "string" ? body.message.trim() : "";
   const conversationId =
     typeof body.conversationId === "string" ? body.conversationId : null;
 
   if (!message) {
     return NextResponse.json({ error: "message is required" }, { status: 400 });
+  }
+
+  const anthropicKey = process.env.ANTHROPIC_API_KEY?.trim();
+  const voyageKey = process.env.VOYAGE_API_KEY?.trim();
+  if (!anthropicKey) {
+    return NextResponse.json(
+      { error: "ANTHROPIC_API_KEY is not set in .env.local" },
+      { status: 503 },
+    );
+  }
+  if (!voyageKey) {
+    return NextResponse.json(
+      { error: "VOYAGE_API_KEY is not set in .env.local" },
+      { status: 503 },
+    );
   }
 
   let supabase: ReturnType<typeof getServiceSupabase>;
@@ -84,28 +179,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: msg }, { status: 503 });
   }
 
-  const edgeName = process.env.SUPABASE_CLAUDE_FUNCTION?.trim();
-  const anthropicKey = process.env.ANTHROPIC_API_KEY?.trim();
-  if (!edgeName && !anthropicKey) {
-    return NextResponse.json(
-      {
-        error:
-          "Set ANTHROPIC_API_KEY for Claude in Next.js, or SUPABASE_CLAUDE_FUNCTION to call your Edge Function, or SUPABASE_CHAT_FUNCTION_URL to proxy the whole request.",
-      },
-      { status: 503 },
-    );
-  }
-
   let convId = conversationId;
   if (convId) {
-    const { data: existing, error: checkErr } = await supabase
+    const { data: existing } = await supabase
       .from("wholara_conversations")
       .select("id")
       .eq("id", convId)
       .maybeSingle();
-    if (checkErr || !existing) {
-      convId = null;
-    }
+    if (!existing) convId = null;
   }
 
   if (!convId) {
@@ -129,10 +210,7 @@ export async function POST(req: Request) {
     content: message,
   });
   if (insUserErr) {
-    return NextResponse.json(
-      { error: insUserErr.message },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: insUserErr.message }, { status: 500 });
   }
 
   const { data: historyRows, error: histErr } = await supabase
@@ -148,96 +226,96 @@ export async function POST(req: Request) {
   }
 
   const history = historyRows as ChatMessageRow[];
-  const anthropicMessages = history.map((m) => ({
-    role: m.role as "user" | "assistant",
-    content: m.content,
-  }));
 
-  let assistantText: string;
+  const anthropicMessages: Anthropic.Messages.MessageParam[] = history.map(
+    (m) => ({
+      role: m.role,
+      content: m.content,
+    }),
+  );
 
-  if (edgeName) {
-    const base = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
-    const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
-    if (!base || !anon) {
-      return NextResponse.json(
-        {
-          error:
-            "SUPABASE_CLAUDE_FUNCTION requires NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY",
-        },
-        { status: 503 },
-      );
-    }
-    const fnUrl = `${base}/functions/v1/${edgeName}`;
-    const edgeRes = await fetch(fnUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${anon}`,
-        apikey: anon,
-      },
-      body: JSON.stringify({
-        conversationId: convId,
-        message,
-        messages: anthropicMessages,
-      }),
-    });
-    const edgeJson: unknown = await edgeRes.json().catch(() => null);
-    if (!edgeRes.ok) {
-      const errMsg =
-        edgeJson &&
-        typeof edgeJson === "object" &&
-        "error" in edgeJson &&
-        typeof (edgeJson as { error: unknown }).error === "string"
-          ? (edgeJson as { error: string }).error
-          : `Edge function error (${edgeRes.status})`;
-      return NextResponse.json({ error: errMsg }, { status: 502 });
-    }
-    if (
-      edgeJson &&
-      typeof edgeJson === "object" &&
-      "reply" in edgeJson &&
-      typeof (edgeJson as { reply: unknown }).reply === "string"
-    ) {
-      assistantText = (edgeJson as { reply: string }).reply.trim();
-    } else {
-      return NextResponse.json(
-        {
-          error:
-            "Edge function JSON must include a string `reply` field (or use ANTHROPIC_API_KEY instead).",
-        },
-        { status: 502 },
-      );
-    }
-  } else {
-    const model =
-      process.env.ANTHROPIC_MODEL?.trim() || DEFAULT_ANTHROPIC_MODEL;
-    try {
-      const client = new Anthropic({ apiKey: anthropicKey });
+  const client = new Anthropic({ apiKey: anthropicKey });
+  const model = process.env.ANTHROPIC_MODEL?.trim() || DEFAULT_ANTHROPIC_MODEL;
+  const systemPrompt = `${WHOLARA_SYSTEM_PROMPT}\n\n${WHOLARA_INTAKE_INSTRUCTIONS}`;
+
+  let assistantText = "";
+  let toolTurns = 0;
+
+  try {
+    while (toolTurns <= MAX_TOOL_TURNS) {
       const claudeRes = await client.messages.create({
         model,
-        max_tokens: 2048,
-        system: WHOLARA_SYSTEM_PROMPT,
+        max_tokens: 4096,
+        system: systemPrompt,
+        tools: [SEARCH_TOOL],
         messages: anthropicMessages,
       });
-      assistantText = extractAnthropicText(claudeRes);
-      if (!assistantText) {
-        assistantText =
-          "I could not generate a reply just now. Please try again in a moment.";
+
+      const toolUse = findToolUse(claudeRes);
+
+      if (claudeRes.stop_reason === "tool_use" && toolUse) {
+        toolTurns += 1;
+        const input = toolUse.input as { query?: unknown };
+        const query =
+          typeof input.query === "string" ? input.query.trim() : "";
+
+        let toolResultText: string;
+        let isError = false;
+        if (!query) {
+          toolResultText =
+            "Tool error: the `query` field was missing or empty. Please call the tool again with a detailed query.";
+          isError = true;
+        } else {
+          try {
+            const { contextBlock } = await searchKnowledgeBase(
+              query,
+              supabase,
+              voyageKey,
+            );
+            toolResultText = `Retrieved knowledge-base content for query: "${query}"\n\n${contextBlock}\n\nUse this material to write your practitioner-quality synthesis now. End with the <followups>[...]</followups> JSON block as instructed.`;
+          } catch (e) {
+            toolResultText = `Tool error: ${e instanceof Error ? e.message : "search failed"}`;
+            isError = true;
+          }
+        }
+
+        anthropicMessages.push({
+          role: "assistant",
+          content: claudeRes.content,
+        });
+        anthropicMessages.push({
+          role: "user",
+          content: [
+            {
+              type: "tool_result",
+              tool_use_id: toolUse.id,
+              content: toolResultText,
+              is_error: isError,
+            },
+          ],
+        });
+        continue;
       }
-    } catch (e) {
-      console.error("[api/ask] Anthropic error", e);
-      let detail = formatUnknownError(e);
-      if (typeof e === "object" && e !== null && "error" in e) {
-        const inner = (e as { error?: { message?: string } }).error;
-        if (inner?.message) detail = inner.message;
-      }
-      return NextResponse.json(
-        {
-          error: `Claude API: ${detail}. Check ANTHROPIC_API_KEY and ANTHROPIC_MODEL in .env.local.`,
-        },
-        { status: 502 },
-      );
+
+      assistantText = extractText(claudeRes);
+      break;
     }
+  } catch (e) {
+    console.error("[api/ask] Anthropic error", e);
+    let detail = e instanceof Error ? e.message : "Claude request failed";
+    if (typeof e === "object" && e !== null && "error" in e) {
+      const inner = (e as { error?: { message?: string } }).error;
+      if (inner?.message) detail = inner.message;
+    }
+    return NextResponse.json(
+      { error: `Claude API: ${detail}` },
+      { status: 502 },
+    );
+  }
+
+  if (!assistantText) {
+    assistantText =
+      "I could not generate a reply just now. Please try again in a moment.";
   }
 
   const { error: insAsstErr } = await supabase.from("wholara_messages").insert({
@@ -246,10 +324,7 @@ export async function POST(req: Request) {
     content: assistantText,
   });
   if (insAsstErr) {
-    return NextResponse.json(
-      { error: insAsstErr.message },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: insAsstErr.message }, { status: 500 });
   }
 
   const { data: finalRows, error: finErr } = await supabase
