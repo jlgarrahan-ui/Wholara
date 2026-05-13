@@ -1,9 +1,14 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { navLinks } from "@/lib/nav";
 import { ArrowIcon } from "@/components/icons";
 
 export function SiteHeader() {
+  const pathname = usePathname();
+
   return (
     <header className="sticky top-0 z-30 border-b border-wholara-green/10 bg-wholara-cream/85 backdrop-blur-md">
       <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-4 px-5 py-4 sm:px-8">
@@ -25,15 +30,24 @@ export function SiteHeader() {
           className="hidden items-center gap-3 lg:flex xl:gap-5"
           aria-label="Primary"
         >
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="shrink-0 text-xs font-medium tracking-wide text-wholara-green/80 transition-colors hover:text-wholara-terracotta xl:text-sm"
-            >
-              {link.label}
-            </Link>
-          ))}
+          {navLinks.map((link) => {
+            const isActive = pathname === link.href;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                aria-current={isActive ? "page" : undefined}
+                className={
+                  "shrink-0 text-xs font-medium tracking-wide transition-colors xl:text-sm " +
+                  (isActive
+                    ? "text-wholara-terracotta underline underline-offset-[6px] decoration-2"
+                    : "text-wholara-green/80 hover:text-wholara-terracotta")
+                }
+              >
+                {link.label}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="flex items-center gap-2 sm:gap-3">
@@ -51,15 +65,24 @@ export function SiteHeader() {
         className="flex gap-5 overflow-x-auto border-t border-wholara-green/10 px-5 py-3 lg:hidden"
         aria-label="Mobile primary"
       >
-        {navLinks.map((link) => (
-          <Link
-            key={link.href}
-            href={link.href}
-            className="whitespace-nowrap text-sm font-medium text-wholara-green/75 hover:text-wholara-terracotta"
-          >
-            {link.label}
-          </Link>
-        ))}
+        {navLinks.map((link) => {
+          const isActive = pathname === link.href;
+          return (
+            <Link
+              key={link.href}
+              href={link.href}
+              aria-current={isActive ? "page" : undefined}
+              className={
+                "whitespace-nowrap text-sm font-medium transition-colors " +
+                (isActive
+                  ? "text-wholara-terracotta underline underline-offset-[6px] decoration-2"
+                  : "text-wholara-green/75 hover:text-wholara-terracotta")
+              }
+            >
+              {link.label}
+            </Link>
+          );
+        })}
       </nav>
     </header>
   );
