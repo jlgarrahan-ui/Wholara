@@ -8,7 +8,7 @@ import {
   useState,
   startTransition,
 } from "react";
-import { ArrowIcon, WildflowerIcon } from "@/components/icons";
+import { ArrowIcon, RefreshIcon, WildflowerIcon } from "@/components/icons";
 
 const STORAGE_KEY = "wholara_conversation_id";
 
@@ -59,6 +59,7 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
   const [input, setInput] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -160,7 +161,27 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
     [send],
   );
 
+  const resetConversation = useCallback(() => {
+    setMessages([]);
+    setConversationId(null);
+    setError(null);
+    setInput("");
+    window.localStorage.removeItem(STORAGE_KEY);
+    setShowResetConfirm(false);
+    textareaRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    if (!showResetConfirm) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowResetConfirm(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [showResetConfirm]);
+
   const showWelcome = messages.length === 0 && !disabledReason;
+  const showNewConversation = messages.length > 0;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -175,6 +196,20 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
           <p className="mt-2 whitespace-pre-line text-wholara-green/90">
             {disabledReason}
           </p>
+        </div>
+      )}
+
+      {showNewConversation && (
+        <div className="mb-3 flex shrink-0 justify-end">
+          <button
+            type="button"
+            onClick={() => setShowResetConfirm(true)}
+            className="inline-flex items-center gap-1.5 rounded-full border border-wholara-green/20 bg-wholara-cream px-3 py-1.5 text-xs font-medium text-wholara-green transition-colors hover:border-wholara-terracotta hover:text-wholara-terracotta-deep sm:text-[0.8125rem]"
+            aria-label="Start a new conversation"
+          >
+            <RefreshIcon className="h-3.5 w-3.5" />
+            New Conversation
+          </button>
         </div>
       )}
 
@@ -241,6 +276,79 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
           with a licensed healthcare professional before acting on anything
           here.
         </p>
+      </div>
+
+      {showResetConfirm && (
+        <ResetConfirmDialog
+          onConfirm={resetConversation}
+          onCancel={() => setShowResetConfirm(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+function ResetConfirmDialog({
+  onConfirm,
+  onCancel,
+}: {
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const cancelRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    cancelRef.current?.focus();
+  }, []);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-wholara-green-deep/55 px-4 backdrop-blur-sm"
+      onClick={onCancel}
+      role="presentation"
+    >
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="reset-confirm-title"
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-sm rounded-3xl border border-wholara-cream/10 bg-wholara-green p-6 text-wholara-cream shadow-2xl sm:p-7"
+      >
+        <div className="flex items-start gap-3">
+          <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-wholara-cream/10 text-wholara-cream">
+            <RefreshIcon className="h-4 w-4" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h2
+              id="reset-confirm-title"
+              className="font-display text-xl font-light leading-snug text-wholara-cream sm:text-[1.375rem]"
+            >
+              Start a new conversation?
+            </h2>
+            <p className="mt-2 text-sm leading-relaxed text-wholara-cream/75">
+              This will clear your current chat and bring you back to a fresh
+              start.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-3">
+          <button
+            ref={cancelRef}
+            type="button"
+            onClick={onCancel}
+            className="inline-flex items-center justify-center rounded-full border border-wholara-terracotta/70 px-4 py-2 text-sm font-medium text-wholara-cream transition-colors hover:border-wholara-terracotta hover:bg-wholara-terracotta/10"
+          >
+            Keep This Chat
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="inline-flex items-center justify-center rounded-full bg-wholara-terracotta px-4 py-2 text-sm font-medium text-wholara-cream transition-colors hover:bg-wholara-terracotta-deep"
+          >
+            Clear & Start Fresh
+          </button>
+        </div>
       </div>
     </div>
   );
