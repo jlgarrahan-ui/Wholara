@@ -98,7 +98,7 @@ function Hero() {
 
         <div className="mt-10 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-center">
           <Link
-            href="/app"
+            href="/get-started"
             className="cta-shadow inline-flex items-center justify-center gap-2 rounded-full bg-wholara-terracotta px-8 py-4 text-base font-medium text-wholara-cream transition-colors hover:bg-wholara-terracotta-deep"
           >
             Get Started
@@ -210,7 +210,7 @@ function PhilosophyStrip() {
             </p>
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Link
-                href="/app"
+                href="/get-started"
                 className="cta-shadow inline-flex items-center justify-center gap-2 rounded-full bg-wholara-terracotta px-6 py-3 text-sm font-medium text-wholara-cream transition-colors hover:bg-wholara-terracotta-deep"
               >
                 Get Started

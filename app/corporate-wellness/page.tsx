@@ -96,7 +96,7 @@ const packages: Array<{
       "Full team access to the Wholara app",
       "30-Day Corporate Wellness Restart program",
     ],
-    cta: { label: "Get Started", href: "/app" },
+    cta: { label: "Get Started", href: "/get-started" },
   },
   {
     tier: "Tier 2",
@@ -110,7 +110,7 @@ const packages: Array<{
       "Ask Wholara personalization for every employee",
       "Optional 1:1 coaching add-on with a Master Nutrition Therapist",
     ],
-    cta: { label: "Get Started", href: "/app" },
+    cta: { label: "Get Started", href: "/get-started" },
     highlighted: true,
   },
   {

@@ -38,7 +38,7 @@ export function SiteHeader() {
 
         <div className="flex items-center gap-2 sm:gap-3">
           <Link
-            href="/app"
+            href="/get-started"
             className="inline-flex items-center gap-1.5 rounded-full bg-wholara-green px-4 py-2 text-sm font-medium text-wholara-cream transition-colors hover:bg-wholara-green-deep sm:px-5"
           >
             Get Started
