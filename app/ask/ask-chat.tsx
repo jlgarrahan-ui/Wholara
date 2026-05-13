@@ -11,6 +11,7 @@ import {
 import { ArrowIcon, RefreshIcon, WildflowerIcon } from "@/components/icons";
 
 const STORAGE_KEY = "wholara_conversation_id";
+const MODE_STORAGE_KEY = "wholara_response_mode";
 
 const WELCOME_MESSAGE =
   "Hi! I'm Wholara. Tell me what's been going on — I'm here to help you figure out what your body needs.";
@@ -21,6 +22,8 @@ export type ChatMessage = {
   content: string;
   created_at: string;
 };
+
+export type ResponseMode = "simple" | "deep";
 
 type AskChatProps = {
   /** When set, chat is disabled and this explains how to fix configuration. */
@@ -60,6 +63,8 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [responseMode, setResponseMode] = useState<ResponseMode>("simple");
+  const [regenerating, setRegenerating] = useState<ResponseMode | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -72,17 +77,30 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
   }, []);
 
   useEffect(() => {
+    const savedMode = window.localStorage.getItem(MODE_STORAGE_KEY);
+    if (savedMode === "deep" || savedMode === "simple") {
+      setResponseMode(savedMode);
+    }
+  }, []);
+
+  const updateResponseMode = useCallback((next: ResponseMode) => {
+    setResponseMode(next);
+    window.localStorage.setItem(MODE_STORAGE_KEY, next);
+  }, []);
+
+  useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, pending]);
 
   const send = useCallback(
-    async (overrideText?: string) => {
+    async (overrideText?: string, overrideMode?: ResponseMode) => {
       if (disabledReason) return;
       const text = (overrideText ?? input).trim();
       if (!text || pending) return;
       if (!overrideText) setInput("");
       setError(null);
       setPending(true);
+      const modeToSend = overrideMode ?? responseMode;
 
       let rollback: ChatMessage[] | null = null;
       setMessages((prev) => {
@@ -105,6 +123,7 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
           body: JSON.stringify({
             message: text,
             conversationId: conversationId ?? undefined,
+            mode: modeToSend,
           }),
         });
         const rawText = await res.text();
@@ -151,7 +170,7 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
         textareaRef.current?.focus();
       }
     },
-    [conversationId, disabledReason, input, pending],
+    [conversationId, disabledReason, input, pending, responseMode],
   );
 
   const handleFollowup = useCallback(
@@ -159,6 +178,62 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
       void send(question);
     },
     [send],
+  );
+
+  const regenerateInMode = useCallback(
+    async (mode: ResponseMode) => {
+      if (disabledReason) return;
+      if (!conversationId) return;
+      if (pending) return;
+      updateResponseMode(mode);
+      setError(null);
+      setPending(true);
+      setRegenerating(mode);
+      try {
+        const res = await fetch("/api/ask/regenerate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ conversationId, mode }),
+        });
+        const rawText = await res.text();
+        let data: unknown = null;
+        try {
+          data = rawText ? (JSON.parse(rawText) as unknown) : null;
+        } catch {
+          data = null;
+        }
+        if (!res.ok) {
+          const fromJson =
+            data &&
+            typeof data === "object" &&
+            "error" in data &&
+            typeof (data as { error: unknown }).error === "string"
+              ? (data as { error: string }).error
+              : null;
+          const fallback =
+            rawText && rawText.length < 400 && !rawText.trim().startsWith("<")
+              ? rawText.trim()
+              : `Request failed (${res.status})`;
+          throw new Error(fromJson ?? fallback);
+        }
+        if (
+          !data ||
+          typeof data !== "object" ||
+          !("messages" in data) ||
+          !Array.isArray((data as { messages: unknown }).messages)
+        ) {
+          throw new Error("Unexpected response from server");
+        }
+        const next = data as { messages: ChatMessage[] };
+        setMessages(next.messages);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Could not regenerate");
+      } finally {
+        setPending(false);
+        setRegenerating(null);
+      }
+    },
+    [conversationId, disabledReason, pending, updateResponseMode],
   );
 
   const resetConversation = useCallback(() => {
@@ -199,37 +274,52 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
         </div>
       )}
 
-      {showNewConversation && (
-        <div className="mb-3 flex shrink-0 justify-end">
-          <button
-            type="button"
-            onClick={() => setShowResetConfirm(true)}
-            className="inline-flex items-center gap-1.5 rounded-full border border-wholara-green/20 bg-wholara-cream px-3 py-1.5 text-xs font-medium text-wholara-green transition-colors hover:border-wholara-terracotta hover:text-wholara-terracotta-deep sm:text-[0.8125rem]"
-            aria-label="Start a new conversation"
-          >
-            <RefreshIcon className="h-3.5 w-3.5" />
-            New Conversation
-          </button>
+      {!disabledReason && (
+        <div className="mb-3 flex shrink-0 items-center justify-between gap-3">
+          <ResponseModeToggle
+            mode={responseMode}
+            onChange={updateResponseMode}
+            disabled={pending}
+          />
+          {showNewConversation && (
+            <button
+              type="button"
+              onClick={() => setShowResetConfirm(true)}
+              className="inline-flex items-center gap-1.5 rounded-full border border-wholara-green/20 bg-wholara-cream px-3 py-1.5 text-xs font-medium text-wholara-green transition-colors hover:border-wholara-terracotta hover:text-wholara-terracotta-deep sm:text-[0.8125rem]"
+              aria-label="Start a new conversation"
+            >
+              <RefreshIcon className="h-3.5 w-3.5" />
+              New Conversation
+            </button>
+          )}
         </div>
       )}
 
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-1 py-2 sm:space-y-5 sm:px-2">
         {showWelcome && <AssistantBubble body={WELCOME_MESSAGE} />}
 
-        {messages.map((m) =>
-          m.role === "assistant" ? (
+        {messages.map((m, idx) => {
+          if (m.role !== "assistant") {
+            return <UserBubble key={m.id} content={m.content} />;
+          }
+          const isLastAssistant = idx === messages.length - 1;
+          return (
             <AssistantTurn
               key={m.id}
               content={m.content}
               onFollowup={handleFollowup}
               disabled={pending || Boolean(disabledReason)}
+              onRegenerate={regenerateInMode}
+              isLastAssistant={isLastAssistant}
+              regeneratingMode={
+                isLastAssistant && regenerating ? regenerating : null
+              }
+              canRegenerate={!pending && !disabledReason}
             />
-          ) : (
-            <UserBubble key={m.id} content={m.content} />
-          ),
-        )}
+          );
+        })}
 
-        {pending && <TypingIndicator />}
+        {pending && !regenerating && <TypingIndicator />}
         <div ref={bottomRef} />
       </div>
 
@@ -358,16 +448,28 @@ function AssistantTurn({
   content,
   onFollowup,
   disabled,
+  onRegenerate,
+  isLastAssistant,
+  regeneratingMode,
+  canRegenerate,
 }: {
   content: string;
   onFollowup: (question: string) => void;
   disabled: boolean;
+  onRegenerate: (mode: ResponseMode) => void;
+  isLastAssistant: boolean;
+  regeneratingMode: ResponseMode | null;
+  canRegenerate: boolean;
 }) {
   const parsed = useMemo(() => parseAssistantContent(content), [content]);
+  const isSynthesis = parsed.followups.length > 0;
+  const showRegenerateRow =
+    isLastAssistant && isSynthesis && (canRegenerate || regeneratingMode);
+
   return (
     <div className="space-y-2">
       <AssistantBubble body={parsed.body} />
-      {parsed.followups.length > 0 && (
+      {parsed.followups.length > 0 && !regeneratingMode && (
         <div className="ml-11 flex flex-wrap gap-2 pr-2 sm:ml-12">
           {parsed.followups.map((q, i) => (
             <button
@@ -382,6 +484,87 @@ function AssistantTurn({
           ))}
         </div>
       )}
+      {showRegenerateRow && (
+        <div className="ml-11 pr-2 text-xs sm:ml-12">
+          {regeneratingMode ? (
+            <div
+              role="status"
+              aria-live="polite"
+              className="inline-flex items-center gap-2 text-wholara-sage"
+            >
+              <span className="wholara-typing-dot" />
+              <span className="wholara-typing-dot" />
+              <span className="wholara-typing-dot" />
+              <span className="ml-1">
+                Regenerating in{" "}
+                {regeneratingMode === "deep" ? "Deep Dive" : "Simple"} mode…
+              </span>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              <button
+                type="button"
+                onClick={() => onRegenerate("simple")}
+                className="text-wholara-sage underline underline-offset-2 transition-colors hover:text-wholara-green"
+              >
+                Simplify this
+              </button>
+              <button
+                type="button"
+                onClick={() => onRegenerate("deep")}
+                className="text-wholara-sage underline underline-offset-2 transition-colors hover:text-wholara-green"
+              >
+                Go deeper
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ResponseModeToggle({
+  mode,
+  onChange,
+  disabled,
+}: {
+  mode: ResponseMode;
+  onChange: (next: ResponseMode) => void;
+  disabled: boolean;
+}) {
+  const baseSegment =
+    "rounded-full px-3.5 py-1 text-xs font-medium transition-colors sm:text-[0.8125rem]";
+  const selected = "bg-wholara-terracotta text-wholara-cream shadow-sm";
+  const unselected =
+    "text-wholara-sage hover:text-wholara-green disabled:opacity-50";
+
+  return (
+    <div
+      role="radiogroup"
+      aria-label="Response style"
+      className="inline-flex items-center rounded-full border border-wholara-sage/60 bg-wholara-cream p-0.5"
+    >
+      <button
+        type="button"
+        role="radio"
+        aria-checked={mode === "simple"}
+        disabled={disabled}
+        onClick={() => onChange("simple")}
+        className={`${baseSegment} ${mode === "simple" ? selected : unselected}`}
+      >
+        Simple
+      </button>
+      <button
+        type="button"
+        role="radio"
+        aria-checked={mode === "deep"}
+        disabled={disabled}
+        onClick={() => onChange("deep")}
+        className={`${baseSegment} ${mode === "deep" ? selected : unselected}`}
+      >
+        Deep Dive
+      </button>
     </div>
   );
 }

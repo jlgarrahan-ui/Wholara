@@ -13,6 +13,14 @@ const MATCH_COUNT = 20;
 const MATCH_THRESHOLD = 0.3;
 const MAX_TOOL_TURNS = 2;
 
+const SIMPLE_MODE_INSTRUCTIONS =
+  "Response style — SIMPLE MODE: Give practical, warm, easy-to-understand answers. Use plain language, avoid technical jargon, and focus on actionable steps the user can take today. Keep responses concise — 3-5 sentences or a short bullet list. Lead with what to do, not why.";
+
+const DEEP_MODE_INSTRUCTIONS =
+  "Response style — DEEP DIVE MODE: Give thorough, clinically detailed answers. Explain the mechanisms, the root causes, and the science behind your recommendations. Include specific nutrients, neurotransmitters, pathways, or hormones involved. Users in this mode want to understand their body deeply.";
+
+type ResponseMode = "simple" | "deep";
+
 type ChatMessageRow = {
   id: string;
   conversation_id: string;
@@ -138,11 +146,16 @@ async function searchKnowledgeBase(
 }
 
 export async function POST(req: Request) {
-  let body: { message?: unknown; conversationId?: unknown };
+  let body: {
+    message?: unknown;
+    conversationId?: unknown;
+    mode?: unknown;
+  };
   try {
     body = (await req.json()) as {
       message?: unknown;
       conversationId?: unknown;
+      mode?: unknown;
     };
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
@@ -151,6 +164,7 @@ export async function POST(req: Request) {
   const message = typeof body.message === "string" ? body.message.trim() : "";
   const conversationId =
     typeof body.conversationId === "string" ? body.conversationId : null;
+  const mode: ResponseMode = body.mode === "deep" ? "deep" : "simple";
 
   if (!message) {
     return NextResponse.json({ error: "message is required" }, { status: 400 });
@@ -236,7 +250,9 @@ export async function POST(req: Request) {
 
   const client = new Anthropic({ apiKey: anthropicKey });
   const model = process.env.ANTHROPIC_MODEL?.trim() || DEFAULT_ANTHROPIC_MODEL;
-  const systemPrompt = `${WHOLARA_SYSTEM_PROMPT}\n\n${WHOLARA_INTAKE_INSTRUCTIONS}`;
+  const modeInstructions =
+    mode === "deep" ? DEEP_MODE_INSTRUCTIONS : SIMPLE_MODE_INSTRUCTIONS;
+  const systemPrompt = `${WHOLARA_SYSTEM_PROMPT}\n\n${WHOLARA_INTAKE_INSTRUCTIONS}\n\n${modeInstructions}`;
 
   let assistantText = "";
   let toolTurns = 0;
