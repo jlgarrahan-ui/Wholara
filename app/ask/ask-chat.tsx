@@ -8,7 +8,104 @@ import {
   useState,
   startTransition,
 } from "react";
+import ReactMarkdown from "react-markdown";
+import type { Components } from "react-markdown";
 import { ArrowIcon, RefreshIcon, WildflowerIcon } from "@/components/icons";
+
+const markdownComponents: Components = {
+  p({ children }) {
+    return (
+      <p className="text-sm leading-relaxed text-wholara-green sm:text-[0.9375rem]">
+        {children}
+      </p>
+    );
+  },
+  strong({ children }) {
+    return (
+      <strong className="font-semibold text-wholara-green-deep">
+        {children}
+      </strong>
+    );
+  },
+  em({ children }) {
+    return <em className="italic">{children}</em>;
+  },
+  ul({ children }) {
+    return (
+      <ul className="my-1 list-disc space-y-1 pl-5 marker:text-wholara-terracotta">
+        {children}
+      </ul>
+    );
+  },
+  ol({ children }) {
+    return (
+      <ol className="my-1 list-decimal space-y-1 pl-5 marker:text-wholara-terracotta">
+        {children}
+      </ol>
+    );
+  },
+  li({ children }) {
+    return (
+      <li className="text-sm leading-relaxed text-wholara-green sm:text-[0.9375rem]">
+        {children}
+      </li>
+    );
+  },
+  h1({ children }) {
+    return (
+      <p className="text-sm font-semibold text-wholara-green-deep sm:text-[0.9375rem]">
+        {children}
+      </p>
+    );
+  },
+  h2({ children }) {
+    return (
+      <p className="text-sm font-semibold text-wholara-green-deep sm:text-[0.9375rem]">
+        {children}
+      </p>
+    );
+  },
+  h3({ children }) {
+    return (
+      <p className="text-sm font-semibold text-wholara-green-deep sm:text-[0.9375rem]">
+        {children}
+      </p>
+    );
+  },
+  h4({ children }) {
+    return (
+      <p className="text-sm font-semibold text-wholara-green-deep sm:text-[0.9375rem]">
+        {children}
+      </p>
+    );
+  },
+  a({ children, href }) {
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-wholara-terracotta underline underline-offset-2 hover:text-wholara-terracotta-deep"
+      >
+        {children}
+      </a>
+    );
+  },
+  code({ children }) {
+    return (
+      <code className="rounded bg-wholara-cream-deep px-1 py-0.5 text-[0.85em] text-wholara-green-deep">
+        {children}
+      </code>
+    );
+  },
+  blockquote({ children }) {
+    return (
+      <blockquote className="border-l-2 border-wholara-sage/50 pl-3 text-wholara-green/85 italic">
+        {children}
+      </blockquote>
+    );
+  },
+};
 
 const STORAGE_KEY = "wholara_conversation_id";
 const MODE_STORAGE_KEY = "wholara_response_mode";
@@ -78,9 +175,10 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
 
   useEffect(() => {
     const savedMode = window.localStorage.getItem(MODE_STORAGE_KEY);
-    if (savedMode === "deep" || savedMode === "simple") {
+    if (savedMode !== "deep" && savedMode !== "simple") return;
+    startTransition(() => {
       setResponseMode(savedMode);
-    }
+    });
   }, []);
 
   const updateResponseMode = useCallback((next: ResponseMode) => {
@@ -576,9 +674,9 @@ function AssistantBubble({ body }: { body: string }) {
         <WildflowerIcon className="h-5 w-5" />
       </div>
       <div className="rounded-2xl rounded-tl-md border border-wholara-green/10 bg-wholara-cream px-4 py-3 text-wholara-green shadow-sm">
-        <p className="whitespace-pre-wrap text-sm leading-relaxed sm:text-[0.9375rem]">
-          {body}
-        </p>
+        <div className="space-y-2.5">
+          <ReactMarkdown components={markdownComponents}>{body}</ReactMarkdown>
+        </div>
       </div>
     </div>
   );
