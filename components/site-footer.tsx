@@ -33,7 +33,7 @@ export function SiteFooter() {
         </nav>
 
         <p className="text-xs text-wholara-green/55">
-          © {new Date().getFullYear()} Wholara. Rooted in clinical science.
+          © {new Date().getFullYear()} Wholara. Rooted in real science.
         </p>
       </div>
     </footer>

@@ -7,7 +7,7 @@ import { SiteHeader } from "@/components/site-header";
 export const metadata: Metadata = {
   title: "Corporate Wellness | Wholara",
   description:
-    "Wholara's Corporate Wellness program brings clinical nutrition science to your organization — reducing burnout, sharpening focus, and helping teams perform at their best.",
+    "Wholara's Corporate Wellness program brings nutrition science to your organization — reducing burnout, sharpening focus, and helping teams perform at their best.",
 };
 
 type IconProps = { className?: string };
@@ -72,7 +72,7 @@ const standaloneOfferings: Array<{
     title: "Corporate Wellness Newsletter",
     subtitle: "Monthly + Weekly",
     body:
-      "Monthly deep-dive newsletters and weekly micro-content delivered to your team's inbox. Clinical nutrition science made practical — tips, seasonal recipes, habit strategies, and the latest research translated into real life. Consistent wellness education that compounds over time.",
+      "Monthly deep-dive newsletters and weekly micro-content delivered to your team's inbox. Nutrition science made practical — tips, seasonal recipes, habit strategies, and the latest research translated into real life. Consistent wellness education that compounds over time.",
     tag: "Available as a standalone or included in all packages.",
   },
 ];
@@ -169,12 +169,7 @@ function Hero() {
       />
 
       <div className="relative mx-auto flex w-full max-w-5xl flex-col items-center px-5 py-24 text-center sm:px-8 sm:py-32 lg:py-40">
-        <span className="inline-flex items-center gap-2 rounded-full border border-wholara-cream/25 bg-wholara-cream/5 px-3.5 py-1.5 text-xs font-medium uppercase tracking-[0.18em] text-wholara-cream/85">
-          <span className="h-1.5 w-1.5 rounded-full bg-wholara-terracotta" />
-          Corporate Wellness
-        </span>
-
-        <h1 className="font-display mt-8 text-4xl font-light leading-[1.05] text-wholara-cream sm:text-5xl md:text-6xl lg:text-7xl">
+        <h1 className="font-display text-4xl font-light leading-[1.05] text-wholara-cream sm:text-5xl md:text-6xl lg:text-7xl">
           Your team&rsquo;s performance starts at the{" "}
           <span className="italic text-wholara-terracotta">cellular level.</span>
         </h1>
@@ -221,9 +216,9 @@ function BusinessCase() {
           shows that for every <strong className="font-semibold text-wholara-green">$1</strong>{" "}
           invested in employee wellness, organizations see an average return of{" "}
           <strong className="font-semibold text-wholara-green">$3.27</strong>{" "}
-          in reduced healthcare costs. Wholara brings clinical nutrition
-          science directly to your organization — practical, personalized, and
-          built for real working people.
+          in reduced healthcare costs. Wholara brings nutrition science
+          directly to your organization — practical, personalized, and built
+          for real working people.
         </p>
 
         <dl className="mt-12 grid gap-6 sm:grid-cols-3">

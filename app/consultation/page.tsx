@@ -9,13 +9,34 @@ export const metadata: Metadata = {
     "Reach out to Wholara for individual nutrition coaching or a corporate wellness program. We respond within 24 hours.",
 };
 
-export default function ConsultationPage() {
+type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>;
+
+const GROUP_RESET_WAITLIST_MESSAGE =
+  "I'm interested in joining the waitlist for the 4-Week Group Reset program in Denver, CO.";
+
+export default async function ConsultationPage({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  const params = await searchParams;
+  const interest =
+    typeof params.interest === "string" ? params.interest : undefined;
+
+  const initialServiceInterest: "individual" | "corporate" =
+    interest === "group-reset-waitlist" ? "individual" : "individual";
+  const initialMessage =
+    interest === "group-reset-waitlist" ? GROUP_RESET_WAITLIST_MESSAGE : "";
+
   return (
     <div className="flex flex-col flex-1 bg-wholara-cream text-wholara-green">
       <SiteHeader />
       <main className="flex flex-col flex-1">
         <Hero />
-        <FormSection />
+        <FormSection
+          initialServiceInterest={initialServiceInterest}
+          initialMessage={initialMessage}
+        />
       </main>
       <SiteFooter />
     </div>
@@ -62,13 +83,22 @@ function Hero() {
   );
 }
 
-function FormSection() {
+function FormSection({
+  initialServiceInterest,
+  initialMessage,
+}: {
+  initialServiceInterest: "individual" | "corporate";
+  initialMessage: string;
+}) {
   return (
     <section className="relative bg-wholara-cream">
       <div className="texture-grain absolute inset-0" aria-hidden />
       <div className="relative mx-auto w-full max-w-[600px] px-5 py-16 sm:px-6 sm:py-20 lg:py-24">
         <div className="relative overflow-hidden rounded-3xl border border-wholara-green/10 border-l-[6px] border-l-wholara-terracotta bg-white p-7 shadow-[0_24px_60px_-30px_rgba(44,74,53,0.35)] sm:p-9">
-          <ConsultationForm />
+          <ConsultationForm
+            initialServiceInterest={initialServiceInterest}
+            initialMessage={initialMessage}
+          />
         </div>
       </div>
     </section>

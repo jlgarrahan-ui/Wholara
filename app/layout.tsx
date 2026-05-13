@@ -16,7 +16,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Wholara — Personalized nutrition, rooted in real clinical science",
+  title: "Wholara — Personalized nutrition, rooted in real science",
   description:
     "Wholara was built by a Master Nutrition Therapist and Certified Wellness and Lifestyle Coach from Harvard Medical School who believes your health shouldn't be a luxury. Personalized wellness, designed around your life.",
 };

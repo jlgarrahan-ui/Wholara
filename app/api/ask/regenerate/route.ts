@@ -11,7 +11,7 @@ const SIMPLE_MODE_INSTRUCTIONS =
   "Response style — SIMPLE MODE: Give practical, warm, easy-to-understand answers. Use plain language, avoid technical jargon, and focus on actionable steps the user can take today. Keep responses concise — 3-5 sentences or a short bullet list. Lead with what to do, not why.";
 
 const DEEP_MODE_INSTRUCTIONS =
-  "Response style — DEEP DIVE MODE: Give thorough, clinically detailed answers. Explain the mechanisms, the root causes, and the science behind your recommendations. Include specific nutrients, neurotransmitters, pathways, or hormones involved. Users in this mode want to understand their body deeply.";
+  "Response style — DEEP DIVE MODE: Give thorough, scientifically detailed answers. Explain the mechanisms, the root causes, and the science behind your recommendations. Include specific nutrients, neurotransmitters, pathways, or hormones involved. Users in this mode want to understand their body deeply.";
 
 const FOLLOWUPS_DIRECTIVE = `After your response, end with a block of 2-3 suggested follow-up questions in this exact format:
 

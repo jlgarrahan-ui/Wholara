@@ -17,10 +17,18 @@ const inputOk =
 const inputErr =
   "border-red-500 focus:border-red-500 focus:ring-2 focus:ring-red-500/25";
 
-export function ConsultationForm() {
+type ConsultationFormProps = {
+  initialServiceInterest?: "individual" | "corporate";
+  initialMessage?: string;
+};
+
+export function ConsultationForm({
+  initialServiceInterest = "individual",
+  initialMessage = "",
+}: ConsultationFormProps = {}) {
   const [serviceInterest, setServiceInterest] = useState<
     "individual" | "corporate"
-  >("individual");
+  >(initialServiceInterest);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [success, setSuccess] = useState<{ firstName: string } | null>(null);
   const [pending, startTransition] = useTransition();
@@ -207,6 +215,7 @@ export function ConsultationForm() {
           id="message"
           name="message"
           rows={5}
+          defaultValue={initialMessage}
           placeholder="Share anything you'd like us to know — your goals, challenges, or questions. The more you share, the better we can prepare for our conversation."
           className={`${inputBase} ${inputOk} resize-y leading-relaxed`}
         />

@@ -17,7 +17,7 @@ const SIMPLE_MODE_INSTRUCTIONS =
   "Response style — SIMPLE MODE: Give practical, warm, easy-to-understand answers. Use plain language, avoid technical jargon, and focus on actionable steps the user can take today. Keep responses concise — 3-5 sentences or a short bullet list. Lead with what to do, not why.";
 
 const DEEP_MODE_INSTRUCTIONS =
-  "Response style — DEEP DIVE MODE: Give thorough, clinically detailed answers. Explain the mechanisms, the root causes, and the science behind your recommendations. Include specific nutrients, neurotransmitters, pathways, or hormones involved. Users in this mode want to understand their body deeply.";
+  "Response style — DEEP DIVE MODE: Give thorough, scientifically detailed answers. Explain the mechanisms, the root causes, and the science behind your recommendations. Include specific nutrients, neurotransmitters, pathways, or hormones involved. Users in this mode want to understand their body deeply.";
 
 type ResponseMode = "simple" | "deep";
 
@@ -40,7 +40,7 @@ type DocumentMatch = {
 const SEARCH_TOOL: Anthropic.Messages.Tool = {
   name: "search_knowledge_base",
   description:
-    "Search Wholara's clinical nutrition knowledge base for evidence-based content relevant to the user's situation. Only call this AFTER you have gathered enough intake context (typically 2-3 user exchanges covering medications, stress, sleep, digestion, energy, diet, and other clinically relevant factors). Build the query from everything the user has shared so far — symptoms, context, suspected root causes, and relevant body systems. The richer and more specific the query, the better the retrieved content.",
+    "Search Wholara's nutrition knowledge base for evidence-based content relevant to the user's situation. Only call this AFTER you have gathered enough intake context (typically 2-3 user exchanges covering medications, stress, sleep, digestion, energy, diet, and other relevant factors). Build the query from everything the user has shared so far — symptoms, context, suspected root causes, and relevant body systems. The richer and more specific the query, the better the retrieved content.",
   input_schema: {
     type: "object",
     properties: {
@@ -124,7 +124,7 @@ async function searchKnowledgeBase(
     return {
       matches,
       contextBlock:
-        "No matching content was retrieved from the knowledge base. Be transparent with the user that you do not have specific source material and answer based on general clinical nutrition principles.",
+        "No matching content was retrieved from the knowledge base. Be transparent with the user that you do not have specific source material and answer based on general nutrition principles.",
     };
   }
 

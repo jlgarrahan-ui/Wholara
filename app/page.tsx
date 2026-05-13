@@ -6,9 +6,9 @@ import { SiteHeader } from "@/components/site-header";
 
 const features = [
   {
-    title: "Real Clinical Science",
+    title: "Real Science",
     body:
-      "Every answer is grounded in a Master Nutrition Therapist and Harvard-trained Wellness Coach's clinical knowledge base, not the whole internet.",
+      "Every answer is grounded in a Master Nutrition Therapist and Harvard-trained Wellness Coach's evidence-based knowledge base, not the whole internet.",
     icon: MicroscopeIcon,
     accent: "bg-wholara-green text-wholara-cream",
   },
@@ -85,7 +85,7 @@ function Hero() {
           Wholara was built by a Master Nutrition Therapist and Certified
           Wellness and Lifestyle Coach from Harvard Medical School who believes
           your health shouldn&rsquo;t be a luxury. Every recommendation is
-          rooted in real clinical science — personalized to you, designed
+          rooted in real science — personalized to you, designed
           around your life, and accessible no matter where you&rsquo;re
           starting from.
         </p>
