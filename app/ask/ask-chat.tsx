@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  startTransition,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import type { Components } from "react-markdown";
 import { ArrowIcon, RefreshIcon, WildflowerIcon } from "@/components/icons";
@@ -167,18 +160,11 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
 
   useEffect(() => {
     const saved = window.localStorage.getItem(STORAGE_KEY);
-    if (!saved) return;
-    startTransition(() => {
-      setConversationId(saved);
-    });
-  }, []);
-
-  useEffect(() => {
+    if (saved) setConversationId(saved);
     const savedMode = window.localStorage.getItem(MODE_STORAGE_KEY);
-    if (savedMode !== "deep" && savedMode !== "simple") return;
-    startTransition(() => {
+    if (savedMode === "deep" || savedMode === "simple") {
       setResponseMode(savedMode);
-    });
+    }
   }, []);
 
   const updateResponseMode = useCallback((next: ResponseMode) => {

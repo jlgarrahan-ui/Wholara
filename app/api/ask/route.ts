@@ -8,10 +8,11 @@ import {
 
 export const runtime = "nodejs";
 
-const DEFAULT_ANTHROPIC_MODEL = "claude-sonnet-4-6";
+const DEFAULT_ANTHROPIC_MODEL = "claude-opus-4-5";
 const MATCH_COUNT = 20;
 const MATCH_THRESHOLD = 0.3;
-const MAX_TOOL_TURNS = 2;
+const MAX_TOOL_TURNS = 4;
+const MAX_OUTPUT_TOKENS = 8192;
 
 const SIMPLE_MODE_INSTRUCTIONS =
   "Response style — SIMPLE MODE: Give practical, warm, easy-to-understand answers. Use plain language, avoid technical jargon, and focus on actionable steps the user can take today. Keep responses concise — 3-5 sentences or a short bullet list. Lead with what to do, not why.";
@@ -195,11 +196,14 @@ export async function POST(req: Request) {
 
   let convId = conversationId;
   if (convId) {
-    const { data: existing } = await supabase
+    const { data: existing, error: lookupErr } = await supabase
       .from("wholara_conversations")
       .select("id")
       .eq("id", convId)
       .maybeSingle();
+    if (lookupErr) {
+      return NextResponse.json({ error: lookupErr.message }, { status: 500 });
+    }
     if (!existing) convId = null;
   }
 
@@ -258,18 +262,19 @@ export async function POST(req: Request) {
   let toolTurns = 0;
 
   try {
-    while (toolTurns <= MAX_TOOL_TURNS) {
+    while (true) {
+      const atToolCap = toolTurns >= MAX_TOOL_TURNS;
       const claudeRes = await client.messages.create({
         model,
-        max_tokens: 4096,
+        max_tokens: MAX_OUTPUT_TOKENS,
         system: systemPrompt,
-        tools: [SEARCH_TOOL],
+        tools: atToolCap ? undefined : [SEARCH_TOOL],
         messages: anthropicMessages,
       });
 
       const toolUse = findToolUse(claudeRes);
 
-      if (claudeRes.stop_reason === "tool_use" && toolUse) {
+      if (claudeRes.stop_reason === "tool_use" && toolUse && !atToolCap) {
         toolTurns += 1;
         const input = toolUse.input as { query?: unknown };
         const query =
