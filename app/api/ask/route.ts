@@ -164,20 +164,7 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: msg }, { status: 503 });
   }
 
-  const { data: convo, error: convoErr } = await supabase
-    .from("wholara_conversations")
-    .select("id")
-    .eq("id", conversationId)
-    .maybeSingle();
-  if (convoErr) {
-    return NextResponse.json({ error: convoErr.message }, { status: 500 });
-  }
-  if (!convo) {
-    return NextResponse.json(
-      { conversationId: null, messages: [] as ChatMessageRow[] },
-      { status: 200 },
-    );
-  }
+  console.log("[api/ask GET] hydration requested for", conversationId);
 
   const { data, error } = await supabase
     .from("wholara_messages")
@@ -185,13 +172,16 @@ export async function GET(req: Request) {
     .eq("conversation_id", conversationId)
     .order("created_at", { ascending: true });
   if (error) {
+    console.error("[api/ask GET] messages load error", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-
-  return NextResponse.json({
+  const messages = (data ?? []) as ChatMessageRow[];
+  console.log("[api/ask GET] returning", {
     conversationId,
-    messages: (data ?? []) as ChatMessageRow[],
+    messageCount: messages.length,
   });
+
+  return NextResponse.json({ conversationId, messages });
 }
 
 export async function POST(req: Request) {
@@ -242,7 +232,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: msg }, { status: 503 });
   }
 
-  let convId = conversationId;
+  const incomingConvId = conversationId;
+  console.log("[api/ask POST] incoming conversationId:", incomingConvId);
+  let convId: string | null = incomingConvId;
   if (convId) {
     const { data: existing, error: lookupErr } = await supabase
       .from("wholara_conversations")
@@ -250,9 +242,30 @@ export async function POST(req: Request) {
       .eq("id", convId)
       .maybeSingle();
     if (lookupErr) {
+      console.error("[api/ask POST] conversation lookup error", lookupErr);
       return NextResponse.json({ error: lookupErr.message }, { status: 500 });
     }
-    if (!existing) convId = null;
+    if (!existing) {
+      console.warn(
+        "[api/ask POST] conversations row missing for client id, attempting recovery insert",
+        convId,
+      );
+      const { error: recErr } = await supabase
+        .from("wholara_conversations")
+        .insert({ id: convId });
+      if (recErr) {
+        console.error(
+          "[api/ask POST] recovery insert failed, will create a new conversation",
+          { convId, error: recErr },
+        );
+        convId = null;
+      } else {
+        console.log(
+          "[api/ask POST] recovered conversations row, keeping client id",
+          convId,
+        );
+      }
+    }
   }
 
   if (!convId) {
@@ -262,12 +275,21 @@ export async function POST(req: Request) {
       .select("id")
       .single();
     if (cErr || !created) {
+      console.error("[api/ask POST] could not create new conversation", cErr);
       return NextResponse.json(
         { error: cErr?.message ?? "Could not create conversation" },
         { status: 500 },
       );
     }
     convId = created.id as string;
+    console.log("[api/ask POST] created new conversation", convId);
+  }
+
+  if (incomingConvId && convId !== incomingConvId) {
+    console.warn(
+      "[api/ask POST] conversationId CHANGED — client will overwrite local id",
+      { incoming: incomingConvId, outgoing: convId },
+    );
   }
 
   const { error: insUserErr } = await supabase.from("wholara_messages").insert({
@@ -408,6 +430,10 @@ export async function POST(req: Request) {
     );
   }
 
+  console.log("[api/ask POST] responding", {
+    conversationId: convId,
+    messageCount: finalRows.length,
+  });
   return NextResponse.json({
     conversationId: convId,
     messages: finalRows as ChatMessageRow[],

@@ -161,6 +161,7 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
 
   useEffect(() => {
     const saved = window.localStorage.getItem(STORAGE_KEY);
+    console.log("[ask-chat] mount: localStorage conversationId =", saved);
     if (saved) {
       conversationIdRef.current = saved;
       setConversationId(saved);
@@ -174,26 +175,35 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
     let cancelled = false;
     (async () => {
       try {
+        console.log("[ask-chat] hydration: GET /api/ask for", saved);
         const res = await fetch(
           `/api/ask?conversationId=${encodeURIComponent(saved)}`,
         );
-        if (!res.ok) return;
+        if (!res.ok) {
+          console.warn(
+            "[ask-chat] hydration response not ok — keeping local id",
+            res.status,
+          );
+          return;
+        }
         const data = (await res.json()) as {
           conversationId: string | null;
           messages?: ChatMessage[];
         };
         if (cancelled) return;
-        if (!data.conversationId) {
-          conversationIdRef.current = null;
-          setConversationId(null);
-          window.localStorage.removeItem(STORAGE_KEY);
-          return;
-        }
-        if (Array.isArray(data.messages)) {
+        console.log("[ask-chat] hydration result", {
+          serverConversationId: data.conversationId,
+          messageCount: Array.isArray(data.messages) ? data.messages.length : 0,
+        });
+        // Never clear localStorage from hydration — if the server can't find
+        // the conversation, the next POST will recover it (or create a new
+        // one and we'll update localStorage then). Resetting here would
+        // orphan any messages that exist under the saved id.
+        if (Array.isArray(data.messages) && data.messages.length > 0) {
           setMessages(data.messages);
         }
-      } catch {
-        // network hiccup on hydration — leave the UI in its default state
+      } catch (e) {
+        console.warn("[ask-chat] hydration error — keeping local id", e);
       }
     })();
     return () => {
@@ -234,13 +244,18 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
         ];
       });
 
+      const sentConversationId = conversationIdRef.current ?? undefined;
+      console.log("[ask-chat] send: POST /api/ask", {
+        conversationId: sentConversationId,
+        mode: modeToSend,
+      });
       try {
         const res = await fetch("/api/ask", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             message: text,
-            conversationId: conversationIdRef.current ?? undefined,
+            conversationId: sentConversationId,
             mode: modeToSend,
           }),
         });
@@ -277,6 +292,17 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
           conversationId: string;
           messages: ChatMessage[];
         };
+        console.log("[ask-chat] send: response", {
+          sentConversationId,
+          receivedConversationId: next.conversationId,
+          messageCount: next.messages.length,
+        });
+        if (sentConversationId && sentConversationId !== next.conversationId) {
+          console.error(
+            "[ask-chat] CONVERSATION ID CHANGED MID-SESSION — server returned a different id than was sent. Prior history may be orphaned.",
+            { sent: sentConversationId, received: next.conversationId },
+          );
+        }
         conversationIdRef.current = next.conversationId;
         setConversationId(next.conversationId);
         window.localStorage.setItem(STORAGE_KEY, next.conversationId);
@@ -362,6 +388,9 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
   );
 
   const resetConversation = useCallback(() => {
+    console.log(
+      "[ask-chat] resetConversation: explicit user reset, clearing local id",
+    );
     setMessages([]);
     conversationIdRef.current = null;
     setConversationId(null);
