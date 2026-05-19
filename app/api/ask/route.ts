@@ -146,6 +146,54 @@ async function searchKnowledgeBase(
   return { matches, contextBlock };
 }
 
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const conversationId = searchParams.get("conversationId");
+  if (!conversationId) {
+    return NextResponse.json(
+      { error: "conversationId is required" },
+      { status: 400 },
+    );
+  }
+
+  let supabase: ReturnType<typeof getServiceSupabase>;
+  try {
+    supabase = getServiceSupabase();
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Supabase misconfigured";
+    return NextResponse.json({ error: msg }, { status: 503 });
+  }
+
+  const { data: convo, error: convoErr } = await supabase
+    .from("wholara_conversations")
+    .select("id")
+    .eq("id", conversationId)
+    .maybeSingle();
+  if (convoErr) {
+    return NextResponse.json({ error: convoErr.message }, { status: 500 });
+  }
+  if (!convo) {
+    return NextResponse.json(
+      { conversationId: null, messages: [] as ChatMessageRow[] },
+      { status: 200 },
+    );
+  }
+
+  const { data, error } = await supabase
+    .from("wholara_messages")
+    .select("id, conversation_id, role, content, created_at")
+    .eq("conversation_id", conversationId)
+    .order("created_at", { ascending: true });
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({
+    conversationId,
+    messages: (data ?? []) as ChatMessageRow[],
+  });
+}
+
 export async function POST(req: Request) {
   let body: {
     message?: unknown;

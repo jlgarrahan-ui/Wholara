@@ -38,7 +38,7 @@ export default function AskPage() {
               nutrition knowledge base.
             </p>
           </div>
-          <div className="flex min-h-[500px] flex-1 flex-col rounded-3xl border border-wholara-green/10 bg-wholara-cream-deep/30 p-4 sm:min-h-[min(75vh,640px)] sm:p-6">
+          <div className="flex h-[600px] flex-col rounded-3xl border border-wholara-green/10 bg-wholara-cream-deep/30 p-4 sm:h-[min(75vh,720px)] sm:p-6">
             <AskConsentGate setupMessage={setupMessage} />
           </div>
         </div>

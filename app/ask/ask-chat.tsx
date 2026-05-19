@@ -169,6 +169,36 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
     if (savedMode === "deep" || savedMode === "simple") {
       setResponseMode(savedMode);
     }
+
+    if (!saved) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(
+          `/api/ask?conversationId=${encodeURIComponent(saved)}`,
+        );
+        if (!res.ok) return;
+        const data = (await res.json()) as {
+          conversationId: string | null;
+          messages?: ChatMessage[];
+        };
+        if (cancelled) return;
+        if (!data.conversationId) {
+          conversationIdRef.current = null;
+          setConversationId(null);
+          window.localStorage.removeItem(STORAGE_KEY);
+          return;
+        }
+        if (Array.isArray(data.messages)) {
+          setMessages(data.messages);
+        }
+      } catch {
+        // network hiccup on hydration — leave the UI in its default state
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const updateResponseMode = useCallback((next: ResponseMode) => {
