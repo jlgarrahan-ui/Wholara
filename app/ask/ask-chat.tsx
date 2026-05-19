@@ -157,10 +157,14 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
   const [regenerating, setRegenerating] = useState<ResponseMode | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const conversationIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     const saved = window.localStorage.getItem(STORAGE_KEY);
-    if (saved) setConversationId(saved);
+    if (saved) {
+      conversationIdRef.current = saved;
+      setConversationId(saved);
+    }
     const savedMode = window.localStorage.getItem(MODE_STORAGE_KEY);
     if (savedMode === "deep" || savedMode === "simple") {
       setResponseMode(savedMode);
@@ -206,7 +210,7 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             message: text,
-            conversationId: conversationId ?? undefined,
+            conversationId: conversationIdRef.current ?? undefined,
             mode: modeToSend,
           }),
         });
@@ -243,18 +247,22 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
           conversationId: string;
           messages: ChatMessage[];
         };
+        conversationIdRef.current = next.conversationId;
         setConversationId(next.conversationId);
         window.localStorage.setItem(STORAGE_KEY, next.conversationId);
         setMessages(next.messages);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Something went wrong");
         if (rollback) setMessages(rollback);
+        if (!overrideText) {
+          setInput((cur) => (cur.length === 0 ? text : cur));
+        }
       } finally {
         setPending(false);
         textareaRef.current?.focus();
       }
     },
-    [conversationId, disabledReason, input, pending, responseMode],
+    [disabledReason, input, pending, responseMode],
   );
 
   const handleFollowup = useCallback(
@@ -277,7 +285,10 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
         const res = await fetch("/api/ask/regenerate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ conversationId, mode }),
+          body: JSON.stringify({
+            conversationId: conversationIdRef.current ?? conversationId,
+            mode,
+          }),
         });
         const rawText = await res.text();
         let data: unknown = null;
@@ -322,6 +333,7 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
 
   const resetConversation = useCallback(() => {
     setMessages([]);
+    conversationIdRef.current = null;
     setConversationId(null);
     setError(null);
     setInput("");
