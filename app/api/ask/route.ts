@@ -293,7 +293,7 @@ export async function POST(req: Request) {
               supabase,
               voyageKey,
             );
-            toolResultText = `RELEVANT CLINICAL KNOWLEDGE retrieved for query: "${query}"\n\n${contextBlock}\n\nWrite your synthesis using ONLY the information in the RELEVANT CLINICAL KNOWLEDGE above. Do not supplement with general training knowledge. If this material does not contain enough information to fully answer the user's question, tell them you don't have enough information in your knowledge base to answer that specifically and recommend speaking with a qualified nutrition therapist. End with the <followups>[...]</followups> JSON block as instructed.`;
+            toolResultText = `RELEVANT KNOWLEDGE retrieved for query: "${query}"\n\n${contextBlock}\n\nWrite your synthesis using ONLY the information in the RELEVANT KNOWLEDGE above. Do not supplement with general training knowledge. If this material does not contain enough information to fully answer the user's question, tell them you don't have enough information in your knowledge base to answer that specifically and recommend speaking with a qualified nutrition therapist. End with the <followups>[...]</followups> JSON block as instructed.`;
           } catch (e) {
             toolResultText = `Tool error: ${e instanceof Error ? e.message : "search failed"}`;
             isError = true;
