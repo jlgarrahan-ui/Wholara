@@ -10,7 +10,7 @@ export const runtime = "nodejs";
 
 const DEFAULT_ANTHROPIC_MODEL = "claude-opus-4-5";
 const MATCH_COUNT = 20;
-const MATCH_THRESHOLD = 0.3;
+const MATCH_THRESHOLD = 0.45;
 const MAX_TOOL_TURNS = 4;
 const MAX_OUTPUT_TOKENS = 8192;
 
@@ -125,7 +125,7 @@ async function searchKnowledgeBase(
     return {
       matches,
       contextBlock:
-        "No matching content was retrieved from the knowledge base. Be transparent with the user that you do not have specific source material and answer based on general nutrition principles.",
+        "No matching content was retrieved from the knowledge base. Do NOT answer from general training knowledge. Tell the user: I don't have enough information in my knowledge base to answer that specifically — I'd recommend speaking with a qualified nutrition therapist. Do not fabricate or supplement an answer.",
     };
   }
 
@@ -293,7 +293,7 @@ export async function POST(req: Request) {
               supabase,
               voyageKey,
             );
-            toolResultText = `Retrieved knowledge-base content for query: "${query}"\n\n${contextBlock}\n\nUse this material to write your practitioner-quality synthesis now. End with the <followups>[...]</followups> JSON block as instructed.`;
+            toolResultText = `RELEVANT CLINICAL KNOWLEDGE retrieved for query: "${query}"\n\n${contextBlock}\n\nWrite your synthesis using ONLY the information in the RELEVANT CLINICAL KNOWLEDGE above. Do not supplement with general training knowledge. If this material does not contain enough information to fully answer the user's question, tell them you don't have enough information in your knowledge base to answer that specifically and recommend speaking with a qualified nutrition therapist. End with the <followups>[...]</followups> JSON block as instructed.`;
           } catch (e) {
             toolResultText = `Tool error: ${e instanceof Error ? e.message : "search failed"}`;
             isError = true;
