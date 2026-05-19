@@ -47,8 +47,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
+  // wholara_conversations.id is int4 in this Supabase schema, so the
+  // client may send conversationId as a JS number after the first response.
+  const rawConvId = body.conversationId;
   const conversationId =
-    typeof body.conversationId === "string" ? body.conversationId : "";
+    typeof rawConvId === "string"
+      ? rawConvId
+      : typeof rawConvId === "number" && Number.isFinite(rawConvId)
+        ? String(rawConvId)
+        : "";
   const mode: ResponseMode = body.mode === "deep" ? "deep" : "simple";
 
   if (!conversationId) {

@@ -201,8 +201,16 @@ export async function POST(req: Request) {
   }
 
   const message = typeof body.message === "string" ? body.message.trim() : "";
+  // wholara_conversations.id is int4 in this Supabase schema, so prior
+  // responses serialize conversationId as a JS number — accept either and
+  // always coerce to string internally.
+  const rawConvId = body.conversationId;
   const conversationId =
-    typeof body.conversationId === "string" ? body.conversationId : null;
+    typeof rawConvId === "string"
+      ? rawConvId
+      : typeof rawConvId === "number" && Number.isFinite(rawConvId)
+        ? String(rawConvId)
+        : null;
   const mode: ResponseMode = body.mode === "deep" ? "deep" : "simple";
 
   if (!message) {
@@ -246,17 +254,26 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: lookupErr.message }, { status: 500 });
     }
     if (!existing) {
+      const recoveryPayload = { id: convId };
       console.warn(
         "[api/ask POST] conversations row missing for client id, attempting recovery insert",
-        convId,
+        JSON.stringify({ table: "wholara_conversations", payload: recoveryPayload }),
       );
       const { error: recErr } = await supabase
         .from("wholara_conversations")
-        .insert({ id: convId });
+        .insert(recoveryPayload);
       if (recErr) {
         console.error(
-          "[api/ask POST] recovery insert failed, will create a new conversation",
-          { convId, error: recErr },
+          "[api/ask POST] recovery insert FAILED, will create a new conversation",
+          JSON.stringify({
+            attempted: { table: "wholara_conversations", payload: recoveryPayload },
+            error: {
+              message: recErr.message,
+              code: recErr.code,
+              details: recErr.details,
+              hint: recErr.hint,
+            },
+          }),
         );
         convId = null;
       } else {
@@ -281,7 +298,7 @@ export async function POST(req: Request) {
         { status: 500 },
       );
     }
-    convId = created.id as string;
+    convId = String(created.id);
     console.log("[api/ask POST] created new conversation", convId);
   }
 
