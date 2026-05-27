@@ -47,13 +47,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  // wholara_conversations.id is int4 in this Supabase schema, so the
-  // client may send conversationId as a JS number after the first response.
+  // wholara_conversations.id is bigint. Accept only a positive-integer
+  // string/number — anything else (e.g. a stale UUID from an older schema)
+  // would crash the lookup on bigint parsing.
   const rawConvId = body.conversationId;
   const conversationId =
-    typeof rawConvId === "string"
+    typeof rawConvId === "string" && /^\d+$/.test(rawConvId)
       ? rawConvId
-      : typeof rawConvId === "number" && Number.isFinite(rawConvId)
+      : typeof rawConvId === "number" && Number.isInteger(rawConvId) && rawConvId > 0
         ? String(rawConvId)
         : "";
   const mode: ResponseMode = body.mode === "deep" ? "deep" : "simple";

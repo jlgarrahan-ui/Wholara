@@ -155,6 +155,10 @@ export async function GET(req: Request) {
       { status: 400 },
     );
   }
+  // Guard the bigint column from invalid client input (e.g. stale UUIDs).
+  if (!/^\d+$/.test(conversationId)) {
+    return NextResponse.json({ conversationId: null, messages: [] });
+  }
 
   let supabase: ReturnType<typeof getServiceSupabase>;
   try {
@@ -201,16 +205,24 @@ export async function POST(req: Request) {
   }
 
   const message = typeof body.message === "string" ? body.message.trim() : "";
-  // wholara_conversations.id is int4 in this Supabase schema, so prior
-  // responses serialize conversationId as a JS number — accept either and
-  // always coerce to string internally.
+  // wholara_conversations.id is bigint. Only accept a positive-integer string
+  // (or finite integer number) from the client; anything else — most often a
+  // UUID left in localStorage from an older schema — is discarded so we fall
+  // through to creating a fresh conversation rather than crashing on
+  // bigint parsing in the lookup below.
   const rawConvId = body.conversationId;
   const conversationId =
-    typeof rawConvId === "string"
+    typeof rawConvId === "string" && /^\d+$/.test(rawConvId)
       ? rawConvId
-      : typeof rawConvId === "number" && Number.isFinite(rawConvId)
+      : typeof rawConvId === "number" && Number.isInteger(rawConvId) && rawConvId > 0
         ? String(rawConvId)
         : null;
+  if (rawConvId != null && conversationId == null) {
+    console.warn(
+      "[api/ask POST] ignoring non-integer conversationId from client",
+      rawConvId,
+    );
+  }
   const mode: ResponseMode = body.mode === "deep" ? "deep" : "simple";
 
   if (!message) {
@@ -254,34 +266,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: lookupErr.message }, { status: 500 });
     }
     if (!existing) {
-      const recoveryPayload = { id: convId };
+      // Unknown id (likely from a different environment or a wiped table).
+      // Fall through to create a fresh conversation — the server is the only
+      // source of truth for conversation_id, never the client.
       console.warn(
-        "[api/ask POST] conversations row missing for client id, attempting recovery insert",
-        JSON.stringify({ table: "wholara_conversations", payload: recoveryPayload }),
+        "[api/ask POST] no conversations row for client id, creating a new one",
+        convId,
       );
-      const { error: recErr } = await supabase
-        .from("wholara_conversations")
-        .insert(recoveryPayload);
-      if (recErr) {
-        console.error(
-          "[api/ask POST] recovery insert FAILED, will create a new conversation",
-          JSON.stringify({
-            attempted: { table: "wholara_conversations", payload: recoveryPayload },
-            error: {
-              message: recErr.message,
-              code: recErr.code,
-              details: recErr.details,
-              hint: recErr.hint,
-            },
-          }),
-        );
-        convId = null;
-      } else {
-        console.log(
-          "[api/ask POST] recovered conversations row, keeping client id",
-          convId,
-        );
-      }
+      convId = null;
     }
   }
 

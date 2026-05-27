@@ -103,6 +103,14 @@ const markdownComponents: Components = {
 const STORAGE_KEY = "wholara_conversation_id";
 const MODE_STORAGE_KEY = "wholara_response_mode";
 
+// wholara_conversations.id is bigint server-side. The id is created by the
+// server and serialized as a numeric string. Any other shape in localStorage —
+// most commonly a UUID left over from an older schema — must be discarded
+// rather than sent back to the server, where it would crash on `bigint` parsing.
+function isServerConversationId(value: unknown): value is string {
+  return typeof value === "string" && /^\d+$/.test(value);
+}
+
 const WELCOME_MESSAGE =
   "Hi! I'm Wholara. Tell me what's been going on — I'm here to help you figure out what your body needs.";
 
@@ -162,7 +170,15 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
   useEffect(() => {
     const saved = window.localStorage.getItem(STORAGE_KEY);
     console.log("[ask-chat] mount: localStorage conversationId =", saved);
-    if (saved) {
+    if (saved && !isServerConversationId(saved)) {
+      // Stale value (e.g. a UUID from an older schema). Drop it so the next
+      // POST creates a fresh conversation and writes back a valid integer id.
+      console.warn(
+        "[ask-chat] mount: discarding non-integer conversationId from localStorage",
+        saved,
+      );
+      window.localStorage.removeItem(STORAGE_KEY);
+    } else if (saved) {
       conversationIdRef.current = saved;
       setConversationId(saved);
     }
@@ -171,7 +187,7 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
       setResponseMode(savedMode);
     }
 
-    if (!saved) return;
+    if (!saved || !isServerConversationId(saved)) return;
     let cancelled = false;
     (async () => {
       try {
@@ -289,23 +305,33 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
           throw new Error("Unexpected response from server");
         }
         const next = data as {
-          conversationId: string;
+          conversationId: unknown;
           messages: ChatMessage[];
         };
+        const receivedId =
+          typeof next.conversationId === "number" &&
+          Number.isInteger(next.conversationId)
+            ? String(next.conversationId)
+            : typeof next.conversationId === "string"
+              ? next.conversationId
+              : "";
         console.log("[ask-chat] send: response", {
           sentConversationId,
-          receivedConversationId: next.conversationId,
+          receivedConversationId: receivedId,
           messageCount: next.messages.length,
         });
-        if (sentConversationId && sentConversationId !== next.conversationId) {
+        if (!isServerConversationId(receivedId)) {
+          throw new Error("Server returned an invalid conversationId");
+        }
+        if (sentConversationId && sentConversationId !== receivedId) {
           console.error(
             "[ask-chat] CONVERSATION ID CHANGED MID-SESSION — server returned a different id than was sent. Prior history may be orphaned.",
-            { sent: sentConversationId, received: next.conversationId },
+            { sent: sentConversationId, received: receivedId },
           );
         }
-        conversationIdRef.current = next.conversationId;
-        setConversationId(next.conversationId);
-        window.localStorage.setItem(STORAGE_KEY, next.conversationId);
+        conversationIdRef.current = receivedId;
+        setConversationId(receivedId);
+        window.localStorage.setItem(STORAGE_KEY, receivedId);
         setMessages(next.messages);
       } catch (e) {
         setError(e instanceof Error ? e.message : "Something went wrong");
