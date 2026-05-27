@@ -1,6 +1,6 @@
 /** @type {import('next-sitemap').IConfig} */
 module.exports = {
-  siteUrl: "https://wholara.org",
+  siteUrl: "https://www.wholara.org",
   generateRobotsTxt: true,
   generateIndexSitemap: false,
   exclude: ["/*", "/**"],
