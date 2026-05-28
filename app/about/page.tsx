@@ -36,7 +36,7 @@ export default function AboutPage() {
 
 function Hero() {
   return (
-    <section className="relative overflow-hidden bg-wholara-cream">
+    <section className="relative overflow-hidden bg-gradient-to-b from-[#e8f0e8] to-[#f5f0e8]">
       <div className="texture-grain absolute inset-0" aria-hidden />
       <div
         aria-hidden
@@ -52,7 +52,7 @@ function Hero() {
           <span className="text-xs font-medium uppercase tracking-[0.18em] text-wholara-terracotta">
             Who&apos;s Behind Wholara
           </span>
-          <h1 className="font-display mt-4 text-4xl font-light leading-[1.05] text-wholara-green sm:text-5xl md:text-6xl">
+          <h1 className="font-display mt-4 text-4xl font-light leading-[1.05] text-[#2C4A35] sm:text-5xl md:text-6xl">
             Julia Garrahan
           </h1>
 
@@ -71,19 +71,12 @@ function Hero() {
             their lives back is the whole point of my work.
           </p>
 
-          <p className="font-display mt-5 text-2xl italic leading-snug text-wholara-sage sm:text-[1.7rem]">
-            If you&apos;re tired of feeling like a{" "}
-            <span className="font-bold text-wholara-green">
-              stranger in your own body
-            </span>
-            , you&apos;re in the{" "}
-            <span className="font-bold text-wholara-terracotta">
-              right place
-            </span>
-            .
+          <p className="font-display mt-5 text-xl font-medium italic leading-snug text-[#2C4A35]">
+            If you&apos;re tired of feeling like a stranger in your own body,
+            you&apos;re in the right place.
           </p>
 
-          <p className="mt-3 text-base leading-relaxed text-wholara-green/75">
+          <p className="mt-3 text-base italic leading-relaxed text-[#7D9B76]">
             Let&apos;s go find your answers, together.
           </p>
 
@@ -120,7 +113,7 @@ function Hero() {
 
 function Story() {
   return (
-    <section className="relative bg-wholara-cream-deep">
+    <section className="relative bg-[#f7f3ec]">
       <div className="texture-grain absolute inset-0" aria-hidden />
       <div className="relative mx-auto max-w-2xl px-5 py-20 sm:px-8 sm:py-24 lg:py-28">
         <p className="mb-10 text-center text-xs font-medium uppercase tracking-[0.18em] text-wholara-terracotta">
