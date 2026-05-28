@@ -39,9 +39,13 @@ export default function AboutPage() {
               These days, helping people get their energy, their confidence, and
               their lives back is the whole point of my work.
             </p>
-            <p className="font-display mt-5 text-2xl font-medium italic leading-snug text-[#2C4A35]">
-              If you&apos;re tired of feeling like a stranger in your own body,
-              you&apos;re in the right place.
+            <p className="font-display mt-5 text-2xl font-medium italic leading-snug text-[#7D9B76]">
+              If you&apos;re tired of feeling like a{" "}
+              <span className="font-medium text-[#2C4A35]">
+                stranger in your own body
+              </span>
+              , you&apos;re in the{" "}
+              <span className="font-medium text-[#C4673A]">right place</span>.
             </p>
             <p className="mt-3 text-base text-[#55594d]">
               Let&apos;s go find your answers, together.
@@ -80,7 +84,7 @@ export default function AboutPage() {
                 My Story
               </p>
 
-              <p className="font-display mb-10 text-2xl font-medium leading-relaxed text-[#2C4A35]">
+              <p className="font-display mb-10 text-2xl font-medium italic leading-relaxed text-[#2C4A35]">
                 People ask me sometimes if I really get what it&apos;s like to
                 feel let down by your own body.{" "}
                 <span className="font-bold text-[#C4673A]">I do.</span>{" "}
