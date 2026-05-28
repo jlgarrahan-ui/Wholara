@@ -79,11 +79,15 @@ export default function AboutPage() {
               My Story
             </p>
 
-            <p className="font-display mb-6 text-2xl font-normal italic leading-relaxed text-[#2e3328]">
-              People ask me sometimes if I really get what it&apos;s like to
-              feel let down by your own body. I do. I&apos;ve spent most of my
-              life learning exactly how that feels.
-            </p>
+            <div className="mb-8 rounded-2xl border border-[#e4ddd0] border-l-4 border-l-[#C4673A] bg-[#F5F0E8] p-8 shadow-sm">
+              <p className="font-display text-2xl font-medium leading-snug text-[#2C4A35] sm:text-3xl">
+                People ask me sometimes if I really get what it&apos;s like to
+                feel let down by your own body.{" "}
+                <span className="font-bold text-[#C4673A]">I do.</span>{" "}
+                I&apos;ve spent most of my life learning exactly how that
+                feels.
+              </p>
+            </div>
 
             <p className="mb-6 text-lg leading-relaxed text-[#2e3328]">
               I was a sick kid. In and out of the hospital for asthma, a long
