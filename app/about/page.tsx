@@ -136,9 +136,9 @@ export default function AboutPage() {
             aria-hidden="true"
             className="pointer-events-none absolute inset-x-0 bottom-full hidden translate-y-10 lg:block"
           >
-            <div className="relative mx-auto h-[615px] w-full max-w-5xl">
-              <LeftWildflowerCluster className="absolute bottom-0 left-0 h-full w-[160px]" />
-              <RightWildflowerCluster className="absolute bottom-0 right-0 h-full w-[160px]" />
+            <div className="relative mx-auto h-[750px] w-full max-w-5xl">
+              <LeftWildflowerCluster className="absolute bottom-0 left-0 h-full w-[195px]" />
+              <RightWildflowerCluster className="absolute bottom-0 right-0 h-full w-[195px]" />
             </div>
           </div>
 
