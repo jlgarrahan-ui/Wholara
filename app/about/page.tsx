@@ -131,14 +131,14 @@ export default function AboutPage() {
 
         {/* 5. CREDENTIALS BAND */}
         <section className="relative mt-8 w-full bg-[#2C4A35] text-[#fdfbf7]">
-          {/* Wildflowers growing up out of the green band */}
+          {/* Wildflowers anchored at the top of the green band, reaching up the page */}
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-x-0 bottom-full hidden translate-y-10 lg:block"
           >
-            <div className="relative mx-auto h-[420px] w-full max-w-5xl">
-              <Wildflowers side="left" className="absolute bottom-0 left-0" />
-              <Wildflowers side="right" className="absolute bottom-0 right-0" />
+            <div className="relative mx-auto h-[615px] w-full max-w-5xl">
+              <LeftWildflowerCluster className="absolute bottom-0 left-0 h-full w-[160px]" />
+              <RightWildflowerCluster className="absolute bottom-0 right-0 h-full w-[160px]" />
             </div>
           </div>
 
@@ -191,78 +191,7 @@ export default function AboutPage() {
   );
 }
 
-type StemFlower = {
-  x: number;
-  bloomY: number;
-  bend: number;
-  petal: string;
-  center: string;
-};
-
-const FLOWER_HEIGHT = 420;
-
-// Varied heights + a natural mix of brand colors, different per side.
-const flowerSets: Record<"left" | "right", StemFlower[]> = {
-  left: [
-    { x: 32, bloomY: 60, bend: 8, petal: "#C4673A", center: "#7D9B76" },
-    { x: 78, bloomY: 22, bend: -6, petal: "#F5F0E8", center: "#7D9B76" },
-    { x: 122, bloomY: 118, bend: 6, petal: "#7D9B76", center: "#F5F0E8" },
-  ],
-  right: [
-    { x: 28, bloomY: 108, bend: -6, petal: "#7D9B76", center: "#F5F0E8" },
-    { x: 72, bloomY: 30, bend: 7, petal: "#C4673A", center: "#7D9B76" },
-    { x: 118, bloomY: 66, bend: -8, petal: "#F5F0E8", center: "#7D9B76" },
-  ],
-};
-
-function Wildflowers({
-  side,
-  className,
-}: {
-  side: "left" | "right";
-  className?: string;
-}) {
-  return (
-    <svg
-      width={150}
-      height={FLOWER_HEIGHT}
-      viewBox={`0 0 150 ${FLOWER_HEIGHT}`}
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={className}
-      aria-hidden="true"
-    >
-      {flowerSets[side].map((f) => {
-        const midY = (f.bloomY + FLOWER_HEIGHT) / 2;
-        const leafX = f.x + (f.bend >= 0 ? 8 : -8);
-        const leafY = midY + 40;
-        return (
-          <g key={f.x}>
-            {/* stem */}
-            <path
-              d={`M ${f.x} ${f.bloomY} Q ${f.x + f.bend} ${midY} ${f.x} ${FLOWER_HEIGHT}`}
-              stroke="#7D9B76"
-              strokeWidth={2}
-              strokeLinecap="round"
-            />
-            {/* leaf */}
-            <ellipse
-              cx={leafX}
-              cy={leafY}
-              rx={9}
-              ry={3.2}
-              fill="#7D9B76"
-              transform={`rotate(${f.bend >= 0 ? 28 : -28} ${leafX} ${leafY})`}
-            />
-            <StemBloom cx={f.x} cy={f.bloomY} petal={f.petal} center={f.center} />
-          </g>
-        );
-      })}
-    </svg>
-  );
-}
-
-function StemBloom({
+function Flower({
   cx,
   cy,
   petal,
@@ -280,17 +209,78 @@ function StemBloom({
         <ellipse
           key={a}
           cx={cx}
-          cy={cy - 8}
-          rx={3.6}
-          ry={6.5}
+          cy={cy - 10}
+          rx={4.5}
+          ry={8}
           fill={petal}
           stroke="#2C4A35"
-          strokeWidth={0.6}
-          strokeOpacity={0.3}
+          strokeWidth={0.7}
+          strokeOpacity={0.4}
           transform={`rotate(${a} ${cx} ${cy})`}
         />
       ))}
-      <circle cx={cx} cy={cy} r={3} fill={center} />
+      <circle
+        cx={cx}
+        cy={cy}
+        r={3.6}
+        fill={center}
+        stroke="#2C4A35"
+        strokeWidth={0.7}
+        strokeOpacity={0.4}
+      />
     </g>
+  );
+}
+
+function WildflowerClusterContent() {
+  return (
+    <>
+      <g fill="none" stroke="#2C4A35" strokeLinecap="round" strokeWidth={1.8}>
+        <path d="M24 34 C 18 150, 30 320, 24 500" />
+        <path d="M65 324 C 68 380, 62 450, 65 500" />
+        <path d="M107 154 C 112 280, 102 410, 107 500" />
+      </g>
+
+      <g fill="#2C4A35">
+        <ellipse cx={14} cy={170} rx={5} ry={2.3} transform="rotate(-30 14 170)" />
+        <ellipse cx={32} cy={300} rx={5} ry={2.3} transform="rotate(30 32 300)" />
+        <ellipse cx={15} cy={440} rx={5} ry={2.3} transform="rotate(-30 15 440)" />
+        <ellipse cx={74} cy={440} rx={4.6} ry={2.1} transform="rotate(35 74 440)" />
+        <ellipse cx={118} cy={270} rx={5} ry={2.3} transform="rotate(30 118 270)" />
+        <ellipse cx={96} cy={440} rx={5} ry={2.3} transform="rotate(-30 96 440)" />
+      </g>
+
+      <Flower cx={24} cy={30} petal="#C4673A" center="#E8B84B" />
+      <Flower cx={65} cy={320} petal="#F5F0E8" center="#C4673A" />
+      <Flower cx={107} cy={150} petal="#7D9B76" center="#E8B84B" />
+    </>
+  );
+}
+
+function LeftWildflowerCluster({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 130 500"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-hidden="true"
+    >
+      <WildflowerClusterContent />
+    </svg>
+  );
+}
+
+function RightWildflowerCluster({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 130 500"
+      xmlns="http://www.w3.org/2000/svg"
+      className={className}
+      aria-hidden="true"
+    >
+      <g transform="matrix(-1 0 0 1 130 0)">
+        <WildflowerClusterContent />
+      </g>
+    </svg>
   );
 }
