@@ -184,13 +184,13 @@ function ProblemSection() {
         <h2 className="font-display text-3xl font-medium leading-tight text-[#fdfbf7] sm:text-4xl">
           You&rsquo;ve already tried the obvious things.
         </h2>
-        <p className="mt-6 text-lg leading-relaxed text-[#fdfbf7]">
+        <p className="mt-6 text-lg leading-relaxed text-[#fdfbf7]/80">
           You&rsquo;ve cleaned up your diet. You&rsquo;ve tried the supplements.
           Maybe you&rsquo;ve seen the doctors and run the labs and walked out
           with &ldquo;everything looks normal&rdquo; even though nothing feels
           normal.
         </p>
-        <p className="mt-5 text-lg leading-relaxed text-[#fdfbf7]">
+        <p className="mt-5 text-lg leading-relaxed text-[#fdfbf7]/80">
           The problem isn&rsquo;t you. The problem is that nutrition advice
           today is built for everyone, which means it&rsquo;s built for no one.
           Generic plans. Conflicting research. Trends dressed up as science.

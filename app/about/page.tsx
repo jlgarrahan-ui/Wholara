@@ -36,27 +36,34 @@ export default function AboutPage() {
 
 function Hero() {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-[#e8f0e8] to-[#f5f0e8]">
-      <div className="texture-grain absolute inset-0" aria-hidden />
+    <section className="relative overflow-hidden bg-wholara-green text-wholara-cream">
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-32 -right-24 h-[420px] w-[420px] rounded-full bg-wholara-terracotta/15 blur-3xl"
+        className="pointer-events-none absolute inset-0 opacity-40"
+        style={{
+          backgroundImage:
+            "repeating-linear-gradient(45deg, rgba(245,240,232,0.05) 0 1px, transparent 1px 18px)",
+        }}
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute -bottom-32 -left-24 h-[420px] w-[420px] rounded-full bg-wholara-sage/20 blur-3xl"
+        className="pointer-events-none absolute -top-32 left-1/4 h-[420px] w-[420px] rounded-full bg-wholara-terracotta/15 blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-32 right-1/4 h-[420px] w-[420px] rounded-full bg-wholara-sage/20 blur-3xl"
       />
 
       <div className="relative mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-12 px-5 py-16 sm:px-8 sm:py-20 md:grid-cols-2 md:gap-14 lg:py-24 lg:gap-16">
         <div>
-          <span className="text-xs font-medium uppercase tracking-[0.18em] text-wholara-terracotta">
+          <span className="text-xs font-medium uppercase tracking-[0.18em] text-[#C4673A]">
             Who&apos;s Behind Wholara
           </span>
-          <h1 className="font-display mt-4 text-4xl font-light leading-[1.05] text-[#2C4A35] sm:text-5xl md:text-6xl">
+          <h1 className="font-display mt-4 text-4xl font-light leading-[1.05] text-[#fdfbf7] sm:text-5xl md:text-6xl">
             Julia Garrahan
           </h1>
 
-          <div className="mt-5 space-y-1 text-sm leading-relaxed text-wholara-sage">
+          <div className="mt-5 space-y-1 text-sm leading-relaxed text-[#fdfbf7]/70">
             <p>Master Nutrition Therapist, Nutrition Therapy Institute</p>
             <p>
               Certified Wellness &amp; Lifestyle Coach, Harvard Medical School
@@ -64,26 +71,26 @@ function Hero() {
             </p>
           </div>
 
-          <div aria-hidden className="my-7 h-px bg-wholara-green/15" />
+          <div aria-hidden className="my-7 border-t border-[#fdfbf7]/20" />
 
-          <p className="text-base leading-relaxed text-wholara-green/80 sm:text-lg">
+          <p className="text-base leading-relaxed text-[#fdfbf7]/80 sm:text-lg">
             These days, helping people get their energy, their confidence, and
             their lives back is the whole point of my work.
           </p>
 
-          <p className="font-display mt-5 text-xl font-medium italic leading-snug text-[#2C4A35]">
+          <p className="font-display mt-5 text-xl font-medium italic leading-snug text-[#C4673A]">
             If you&apos;re tired of feeling like a stranger in your own body,
             you&apos;re in the right place.
           </p>
 
-          <p className="mt-3 text-base italic leading-relaxed text-[#7D9B76]">
+          <p className="mt-3 text-base italic leading-relaxed text-[#fdfbf7]/70">
             Let&apos;s go find your answers, together.
           </p>
 
           <div className="mt-8">
             <Link
               href="/consultation"
-              className="cta-shadow inline-flex items-center justify-center gap-2 rounded-full bg-wholara-terracotta px-8 py-4 text-base font-medium text-wholara-cream transition-colors hover:bg-wholara-terracotta-deep"
+              className="cta-shadow inline-flex items-center justify-center gap-2 rounded-full bg-[#C4673A] px-8 py-4 text-base font-medium text-white transition-colors hover:bg-[#b05e34]"
             >
               Book a Free 20-Min Discovery Call
               <ArrowIcon className="h-4 w-4" />
