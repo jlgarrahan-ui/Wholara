@@ -3,7 +3,7 @@ import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 
 export const metadata: Metadata = {
-  title: "Packages | Wholara",
+  title: "Programs | Wholara",
   description:
     "Pre-built Wholara meal plans that customize to you — anti-inflammatory, GLP-1 support, dopamine reset, and more. Exciting things coming soon.",
 };
@@ -46,7 +46,7 @@ export default function PackagesPage() {
           />
           <div className="relative mx-auto w-full max-w-5xl px-5 py-12 text-center sm:px-8 sm:py-16 lg:py-20">
             <span className="text-xs font-medium uppercase tracking-[0.18em] text-wholara-terracotta">
-              Packages
+              Programs
             </span>
             <h1 className="font-display mt-3 text-4xl font-light leading-[1.05] text-wholara-green sm:text-5xl md:text-6xl">
               Plans built around a goal,{" "}
@@ -56,7 +56,7 @@ export default function PackagesPage() {
             </h1>
             <p className="mx-auto mt-8 max-w-2xl text-base leading-relaxed text-wholara-green/80 sm:text-lg">
               We&rsquo;re putting the finishing touches on a library of Wholara
-              packages &mdash; structured plans you can start today and shape to
+              programs &mdash; structured plans you can start today and shape to
               your life as you go. Here&rsquo;s a first look at what&rsquo;s on
               the way.
             </p>
@@ -135,7 +135,7 @@ export default function PackagesPage() {
               </span>
             </h2>
             <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-wholara-green/80 sm:text-lg">
-              New plans and packages are in the works. Check back soon &mdash;
+              New plans and programs are in the works. Check back soon &mdash;
               or use Ask Wholara any time in the meantime.
             </p>
           </div>
