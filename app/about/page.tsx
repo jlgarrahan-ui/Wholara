@@ -55,18 +55,14 @@ export default function AboutPage() {
         </section>
 
         {/* STORY + PULL QUOTE + STORY CONTINUED, flanked by wildflowers */}
-        <div className="relative mx-auto w-full max-w-5xl">
+        <div className="relative w-full">
+          {/* Full-height wildflowers, pinned to the edges of the centered column */}
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute left-0 top-1/2 hidden -translate-y-1/2 lg:block"
+            className="pointer-events-none absolute inset-0 z-10 mx-auto hidden w-full max-w-5xl lg:block"
           >
-            <LeftWildflowerCluster className="h-[500px] w-[130px]" />
-          </div>
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute right-0 top-1/2 hidden -translate-y-1/2 lg:block"
-          >
-            <RightWildflowerCluster className="h-[500px] w-[130px]" />
+            <LeftWildflowerCluster className="absolute inset-y-0 left-0 h-full w-[130px]" />
+            <RightWildflowerCluster className="absolute inset-y-0 right-0 h-full w-[130px]" />
           </div>
 
           {/* 2. STORY */}
@@ -141,7 +137,6 @@ export default function AboutPage() {
             too.
           </p>
         </section>
-        </div>
 
         {/* 5. CREDENTIALS BAND */}
         <section className="mt-8 w-full bg-[#2C4A35] text-[#fdfbf7]">
@@ -166,6 +161,7 @@ export default function AboutPage() {
             </div>
           </div>
         </section>
+        </div>
 
         {/* 6. CLOSING CTA */}
         <section className="mx-auto max-w-[640px] px-8 py-24 text-center">
@@ -262,12 +258,21 @@ function WildflowerClusterContent() {
 function LeftWildflowerCluster({ className }: { className?: string }) {
   return (
     <svg
-      viewBox="0 0 130 500"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       aria-hidden="true"
     >
-      <WildflowerClusterContent />
+      <defs>
+        <pattern
+          id="wildflower-left"
+          patternUnits="userSpaceOnUse"
+          width={130}
+          height={500}
+        >
+          <WildflowerClusterContent />
+        </pattern>
+      </defs>
+      <rect width={130} height="100%" fill="url(#wildflower-left)" />
     </svg>
   );
 }
@@ -275,14 +280,24 @@ function LeftWildflowerCluster({ className }: { className?: string }) {
 function RightWildflowerCluster({ className }: { className?: string }) {
   return (
     <svg
-      viewBox="0 0 130 500"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       aria-hidden="true"
     >
-      <g transform="matrix(-1 0 0 1 130 0)">
-        <WildflowerClusterContent />
-      </g>
+      <defs>
+        <pattern
+          id="wildflower-right"
+          patternUnits="userSpaceOnUse"
+          width={130}
+          height={500}
+          patternTransform="translate(0 250)"
+        >
+          <g transform="matrix(-1 0 0 1 130 0)">
+            <WildflowerClusterContent />
+          </g>
+        </pattern>
+      </defs>
+      <rect width={130} height="100%" fill="url(#wildflower-right)" />
     </svg>
   );
 }
