@@ -27,13 +27,22 @@ type OnePager = {
 
 const ebooks: Ebook[] = [
   {
+    title: "The Gut-Brain Connection",
+    subtitle: "Field Guide 01",
+    description:
+      "The science behind how your gut shapes your mood, focus, and stress response — and what to eat to support both.",
+    file: "/resources/Wholara_GutBrain_eBook.pdf",
+    tag: "Gut Health",
+    accent: "sage",
+  },
+  {
     title: "The Energy Cliff",
     subtitle: "Field Guide 02",
     description:
       "Why your energy crashes in the afternoon — and exactly what to do about it. A practical breakdown of blood sugar, cortisol, and the nutrients that keep you running.",
     file: "/resources/Wholara_FieldGuide_02_The_Energy_Cliff.pdf",
     tag: "Energy & Fatigue",
-    accent: "sage",
+    accent: "green",
   },
   {
     title: "Your Hormones, Explained",
@@ -42,15 +51,6 @@ const ebooks: Ebook[] = [
       "A plain-language guide to how your hormones actually work — and how food, sleep, and stress are either helping or hurting them.",
     file: "/resources/Wholara_FieldGuide_03_Your_Hormones_Explained.pdf",
     tag: "Hormones",
-    accent: "green",
-  },
-  {
-    title: "The Gut-Brain Connection",
-    subtitle: "eBook",
-    description:
-      "The science behind how your gut shapes your mood, focus, and stress response — and what to eat to support both.",
-    file: "/resources/Wholara_GutBrain_eBook.pdf",
-    tag: "Gut Health",
     accent: "sage",
   },
 ];
@@ -246,7 +246,7 @@ export default function ResourcesPage() {
               together.
             </p>
             <Link
-              href="/get-started"
+              href="/consultation"
               className="mt-8 inline-flex items-center justify-center rounded-full border border-[#fdfbf7] px-7 py-3 text-sm font-medium text-[#fdfbf7] transition-colors hover:bg-[#fdfbf7] hover:text-wholara-green sm:text-base"
             >
               Work With Me

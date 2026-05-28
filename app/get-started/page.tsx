@@ -325,9 +325,6 @@ function EbooksSection() {
 
         <div className="mt-10 flex justify-center">
           <article className="relative flex w-full max-w-xl flex-col rounded-3xl border border-wholara-green/15 bg-wholara-cream-deep/50 p-7 text-center sm:p-9">
-            <span className="absolute right-4 top-4 inline-flex items-center rounded-full bg-wholara-terracotta px-2.5 py-1 text-[0.6rem] font-medium uppercase tracking-[0.2em] text-wholara-cream">
-              Coming Soon
-            </span>
             <BookIcon
               className="mx-auto mt-3 h-12 w-12 text-wholara-terracotta"
               aria-hidden
@@ -341,10 +338,10 @@ function EbooksSection() {
             </p>
             <div className="mt-7 flex justify-center">
               <Link
-                href="/consultation"
+                href="/resources"
                 className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-wholara-terracotta bg-transparent px-7 py-3 text-sm font-medium text-wholara-terracotta transition-colors hover:bg-wholara-terracotta/10"
               >
-                Notify Me
+                Browse Ebooks
                 <ArrowIcon className="h-3.5 w-3.5" />
               </Link>
             </div>
