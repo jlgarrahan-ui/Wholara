@@ -1,77 +1,158 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowIcon } from "@/components/icons";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 
 export const metadata: Metadata = {
-  title: "Get Started | Wholara",
+  title: "Work With Me | Wholara",
   description:
-    "Not sure where to start? Explore Wholara's individual consulting, corporate wellness, meal plans, and ebooks — and find the right place to begin.",
+    "Options built around you and your lifestyle — from 1:1 and group consulting to corporate wellness and free, evidence-based answers with Ask Wholara.",
 };
 
-type IconProps = { className?: string };
-
-const corporateOfferings: Array<{
+type ServiceCard = {
+  badge?: string;
+  label: string;
   title: string;
-  body: string;
+  description: string;
+  features: string[];
   cta: { label: string; href: string };
-}> = [
-  {
-    title: "Lunch and Learn",
-    body:
-      "A 45-minute live or virtual presentation on how nutrition impacts burnout, motivation, mood, and energy. Practical takeaways your team uses the same day.",
-    cta: { label: "Learn More", href: "/corporate-wellness" },
-  },
-  {
-    title: "Newsletter Program",
-    body:
-      "Monthly deep-dive newsletters and weekly micro-content delivered to your team's inbox. Consistent wellness education that compounds over time.",
-    cta: { label: "Learn More", href: "/corporate-wellness" },
-  },
-  {
-    title: "Tiered Packages",
-    body:
-      "From foundational team access to fully customized enterprise wellness strategies — three tiers built to grow with your organization.",
-    cta: { label: "See Packages", href: "/corporate-wellness" },
-  },
-];
+  featured?: boolean;
+};
 
-const mealPlans: Array<{ title: string; body: string }> = [
+const services: ServiceCard[] = [
   {
-    title: "Anti-Inflammatory Plan",
-    body:
-      "6 weeks of meals, recipes, and guidance to reduce inflammation and restore balance.",
+    badge: "Most Popular",
+    label: "1:1 + Group",
+    title: "Individual Consulting",
+    description:
+      "Personalized nutrition support for real life. From the 4-Week Group Reset to private 1:1 coaching, this is where the deep work happens.",
+    features: [
+      "Personalized to your labs, history, and goals",
+      "In-person in Denver or virtual anywhere",
+      "From group reset to full 1:1 coaching",
+    ],
+    cta: { label: "Explore Individual Options", href: "/individual-consulting" },
+    featured: true,
   },
   {
-    title: "GLP-1 Support",
-    body:
-      "Built for people on GLP-1 medications — protein targets, micronutrient gaps, and GI-friendly meals.",
+    label: "Teams + Organizations",
+    title: "Corporate Wellness",
+    description:
+      "Bring real nutrition science to your team. Lunch & Learns, ongoing newsletters, and full wellness programs that actually move the needle on performance.",
+    features: [
+      "Lunch & Learns for any team size",
+      "Monthly wellness newsletter programs",
+      "Tiered packages from single sessions to full programs",
+    ],
+    cta: { label: "Explore Corporate Options", href: "/corporate-wellness" },
   },
   {
-    title: "Dopamine Reset",
-    body:
-      "A 2-week protocol to regulate your dopamine system through food, lifestyle, and daily rhythm.",
-  },
-  {
-    title: "30-Day Reset",
-    body:
-      "A full month of guided nutrition to detox, restore gut health, and build lasting habits.",
+    label: "Free · Always On",
+    title: "Ask Wholara",
+    description:
+      "Get evidence-based nutrition answers any time, powered by 90+ clinical course materials from the Nutrition Therapy Institute.",
+    features: [
+      "Ask anything about nutrition, symptoms, or food",
+      "Backed by real clinical science — not generic advice",
+      "Free to use, no account required",
+    ],
+    cta: { label: "Try Ask Wholara", href: "/ask" },
   },
 ];
 
 export default function GetStartedPage() {
   return (
-    <div className="flex flex-col flex-1 bg-wholara-cream text-wholara-green">
+    <div className="flex flex-1 flex-col bg-[#F5F0E8] text-[#2C4A35]">
       <SiteHeader />
 
-      <main className="flex flex-col flex-1">
-        <Hero />
-        <IndividualConsultingSection />
-        <CorporateWellnessSection />
-        <MealPlansSection />
-        <EbooksSection />
-        <BottomCta />
+      <main className="flex flex-1 flex-col">
+        {/* 1. HERO */}
+        <section className="mx-auto max-w-3xl px-8 py-20 text-center">
+          <p className="text-xs font-medium uppercase tracking-widest text-[#C4673A]">
+            Work With Me
+          </p>
+          <h1
+            className="font-display mt-5 font-medium leading-tight text-[#2e3328]"
+            style={{ fontSize: "clamp(2.4rem, 5vw, 3.2rem)" }}
+          >
+            Options that are built around you and your lifestyle
+          </h1>
+          <p className="mx-auto mt-6 max-w-xl text-lg text-[#55594d]">
+            Whether you&apos;re just getting started or ready to go deep, every
+            path here is rooted in real clinical nutrition science —
+            personalized to you, and designed to fit your actual life.
+          </p>
+        </section>
+
+        {/* 2. SERVICE CARDS */}
+        <section className="mx-auto w-full max-w-5xl px-8 pb-24">
+          <div className="grid gap-6 lg:grid-cols-3">
+            {services.map((service) => (
+              <article
+                key={service.title}
+                className={
+                  "group flex flex-col rounded-2xl border border-[#e4ddd0] bg-white p-8 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg sm:p-10 " +
+                  (service.featured ? "border-t-2 border-t-[#C4673A]" : "")
+                }
+              >
+                {service.badge ? (
+                  <span className="mb-5 inline-flex w-fit items-center rounded-full bg-[#C4673A]/12 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#C4673A]">
+                    {service.badge}
+                  </span>
+                ) : null}
+
+                <p className="text-xs font-medium uppercase tracking-widest text-[#7D9B76]">
+                  {service.label}
+                </p>
+                <h2 className="font-display mt-2 text-2xl font-medium text-[#2e3328]">
+                  {service.title}
+                </h2>
+                <p className="mt-4 text-base leading-relaxed text-[#55594d]">
+                  {service.description}
+                </p>
+
+                <ul className="mt-6 flex flex-col gap-3">
+                  {service.features.map((feature) => (
+                    <li
+                      key={feature}
+                      className="flex items-start gap-3 text-sm leading-relaxed text-[#2e3328]"
+                    >
+                      <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#7D9B76]" />
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="mt-auto pt-8">
+                  <Link
+                    href={service.cta.href}
+                    className="inline-flex w-full items-center justify-center rounded-full bg-[#2C4A35] px-6 py-3.5 text-sm font-medium tracking-wide text-[#fdfbf7] transition-colors hover:bg-[#2e3328]"
+                  >
+                    {service.cta.label}
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        {/* 3. BOTTOM STRIP */}
+        <section className="w-full bg-[#2C4A35] px-8 py-16 text-center text-[#fdfbf7]">
+          <div className="mx-auto max-w-2xl">
+            <h2 className="font-display text-3xl font-medium leading-snug sm:text-4xl">
+              Not sure which is right for you?
+            </h2>
+            <p className="mt-4 text-lg text-[#fdfbf7]/80">
+              Send a message and we&apos;ll figure it out together.
+            </p>
+            <Link
+              href="/consultation"
+              className="mt-8 inline-block rounded-full border border-[#fdfbf7]/50 px-8 py-3.5 text-sm font-medium tracking-wide text-[#fdfbf7] transition-colors hover:bg-[#fdfbf7]/10"
+            >
+              Get in Touch
+            </Link>
+          </div>
+        </section>
       </main>
 
       <SiteFooter />
@@ -79,332 +160,19 @@ export default function GetStartedPage() {
   );
 }
 
-function Hero() {
-  return (
-    <section className="relative overflow-hidden bg-wholara-cream">
-      <div className="texture-grain absolute inset-0" aria-hidden />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -top-32 -right-24 h-[420px] w-[420px] rounded-full bg-wholara-terracotta/15 blur-3xl"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -bottom-32 -left-24 h-[420px] w-[420px] rounded-full bg-wholara-sage/20 blur-3xl"
-      />
-
-      <div className="relative mx-auto flex w-full max-w-5xl flex-col items-center px-5 py-12 text-center sm:px-8 sm:py-16 lg:py-20">
-        <h1 className="font-display text-4xl font-light leading-[1.05] text-wholara-green sm:text-5xl md:text-6xl lg:text-7xl">
-          Not sure where to start?{" "}
-          <span className="italic text-wholara-terracotta">
-            You&rsquo;re in the right place.
-          </span>
-        </h1>
-
-        <p className="mt-8 max-w-2xl text-base leading-relaxed text-wholara-green/80 sm:text-lg">
-          Everyone&rsquo;s starting point is different. Here&rsquo;s a quick
-          look at everything Wholara offers &mdash; find what fits your life
-          right now.
-        </p>
-      </div>
-    </section>
-  );
-}
-
-function IndividualConsultingSection() {
-  return (
-    <section className="relative bg-wholara-sage text-wholara-cream">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-30"
-        style={{
-          backgroundImage:
-            "repeating-linear-gradient(135deg, rgba(44,74,53,0.06) 0 1px, transparent 1px 16px)",
-        }}
-      />
-
-      <div className="relative mx-auto w-full max-w-7xl px-5 py-10 sm:px-8 sm:py-12 lg:py-14">
-        <div className="max-w-3xl">
-          <span className="text-xs font-medium uppercase tracking-[0.18em] text-wholara-terracotta">
-            Personal Support
-          </span>
-          <h2 className="font-display mt-3 text-3xl leading-tight text-wholara-cream sm:text-4xl lg:text-5xl">
-            Built Around <span className="italic">You.</span>
-          </h2>
-          <p className="mt-6 text-base leading-relaxed text-wholara-cream/90 sm:text-lg">
-            If you&rsquo;re dealing with something specific &mdash; fatigue,
-            hormonal imbalance, gut issues, weight, sleep, stress &mdash; or
-            you simply want a real practitioner in your corner, Individual
-            Consulting is where to start. Choose between one-on-one sessions
-            with a Master Nutrition Therapist or join our intimate 4-Week
-            Group Reset program meeting weekly in Denver, CO.
-          </p>
-        </div>
-
-        <div className="mt-10 grid gap-6 md:grid-cols-2 lg:gap-7">
-          <article className="flex flex-col rounded-3xl border border-wholara-cream/40 bg-wholara-cream p-7 text-wholara-green sm:p-8">
-            <h3 className="font-display text-2xl text-wholara-green sm:text-3xl">
-              1:1 Coaching
-            </h3>
-            <p className="mt-5 text-[0.975rem] leading-relaxed text-wholara-green/80">
-              Fully personalized sessions built around your symptoms, your
-              labs, your lifestyle. No generic plans &mdash; just real
-              guidance tailored to you.
-            </p>
-            <div className="mt-auto pt-7">
-              <Link
-                href="/individual-consulting"
-                className="cta-shadow inline-flex items-center justify-center gap-2 rounded-full bg-wholara-terracotta px-7 py-3.5 text-sm font-medium text-wholara-cream transition-colors hover:bg-wholara-terracotta-deep"
-              >
-                Learn More
-                <ArrowIcon className="h-3.5 w-3.5" />
-              </Link>
-            </div>
-          </article>
-
-          <article className="flex flex-col rounded-3xl border border-wholara-cream/40 bg-wholara-cream p-7 text-wholara-green sm:p-8">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <h3 className="font-display text-2xl text-wholara-green sm:text-3xl">
-                4-Week Group Reset
-              </h3>
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-wholara-terracotta/15 px-2.5 py-1 text-xs font-medium text-wholara-terracotta">
-                <span aria-hidden>📍</span>
-                Denver, CO
-              </span>
-            </div>
-            <p className="mt-5 text-[0.975rem] leading-relaxed text-wholara-green/80">
-              Small group. Big results. Meet weekly in Denver with a Master
-              Nutrition Therapist for 4 weeks of guided nutrition, daily
-              check-ins, and community support.
-            </p>
-            <div className="mt-auto pt-7">
-              <Link
-                href="/consultation?interest=group-reset-waitlist"
-                className="cta-shadow inline-flex items-center justify-center gap-2 rounded-full bg-wholara-terracotta px-7 py-3.5 text-sm font-medium text-wholara-cream transition-colors hover:bg-wholara-terracotta-deep"
-              >
-                Join the Waitlist
-                <ArrowIcon className="h-3.5 w-3.5" />
-              </Link>
-            </div>
-          </article>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function CorporateWellnessSection() {
-  return (
-    <section className="relative bg-wholara-cream">
-      <div className="texture-grain absolute inset-0" aria-hidden />
-      <div className="relative mx-auto w-full max-w-7xl px-5 py-10 sm:px-8 sm:py-12 lg:py-14">
-        <div className="max-w-3xl">
-          <span className="text-xs font-medium uppercase tracking-[0.18em] text-wholara-terracotta">
-            For Organizations
-          </span>
-          <h2 className="font-display mt-3 text-3xl leading-tight text-wholara-green sm:text-4xl lg:text-5xl">
-            Bring Wholara to <span className="italic">Your Team.</span>
-          </h2>
-          <p className="mt-6 text-base leading-relaxed text-wholara-green/80 sm:text-lg">
-            Your team&rsquo;s performance starts with how they fuel
-            themselves. Wholara&rsquo;s Corporate Wellness programs bring
-            evidence-based nutrition education directly to your organization
-            &mdash; reducing burnout, improving focus, and building a team
-            that shows up as their best every single day.
-          </p>
-        </div>
-
-        <ul className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3 lg:gap-7">
-          {corporateOfferings.map(({ title, body, cta }) => (
-            <li
-              key={title}
-              className="flex flex-col rounded-3xl border border-wholara-sage/40 bg-wholara-sage p-7 text-wholara-cream sm:p-8"
-            >
-              <h3 className="font-display text-2xl text-wholara-cream sm:text-3xl">
-                {title}
-              </h3>
-              <p className="mt-5 text-[0.975rem] leading-relaxed text-wholara-cream/90">
-                {body}
-              </p>
-              <div className="mt-auto pt-7">
-                <Link
-                  href={cta.href}
-                  className="cta-shadow inline-flex items-center justify-center gap-2 rounded-full bg-wholara-terracotta px-7 py-3.5 text-sm font-medium text-wholara-cream transition-colors hover:bg-wholara-terracotta-deep"
-                >
-                  {cta.label}
-                  <ArrowIcon className="h-3.5 w-3.5" />
-                </Link>
-              </div>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </section>
-  );
-}
-
-function MealPlansSection() {
-  return (
-    <section className="relative overflow-hidden bg-wholara-green text-wholara-cream">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-40"
-        style={{
-          backgroundImage:
-            "repeating-linear-gradient(45deg, rgba(245,240,232,0.05) 0 1px, transparent 1px 18px)",
-        }}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -bottom-32 right-0 h-[420px] w-[420px] rounded-full bg-wholara-terracotta/20 blur-3xl"
-      />
-
-      <div className="relative mx-auto w-full max-w-7xl px-5 py-10 sm:px-8 sm:py-12 lg:py-14">
-        <div className="max-w-3xl">
-          <span className="text-xs font-medium uppercase tracking-[0.18em] text-wholara-terracotta">
-            Personalized Plans
-          </span>
-          <h2 className="font-display mt-3 text-3xl leading-tight text-wholara-cream sm:text-4xl lg:text-5xl">
-            Pre-Built Plans That{" "}
-            <span className="italic">Customize to You.</span>
-          </h2>
-          <p className="mt-6 text-base leading-relaxed text-wholara-cream/90 sm:text-lg">
-            Start with a Wholara meal plan built around a specific health
-            goal &mdash; then personalize it to your lifestyle through Ask
-            Wholara. Drag-and-drop recipes, weekly grocery lists, and an AI
-            tool that answers your questions as you go.
-          </p>
-        </div>
-
-        <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
-          {mealPlans.map(({ title, body }) => (
-            <li
-              key={title}
-              className="relative flex flex-col rounded-3xl border border-wholara-cream/15 bg-wholara-green-deep/45 p-6 sm:p-7"
-            >
-              <span className="absolute right-4 top-4 inline-flex items-center rounded-full bg-wholara-terracotta px-2.5 py-1 text-[0.6rem] font-medium uppercase tracking-[0.2em] text-wholara-cream">
-                Coming Soon
-              </span>
-              <h3 className="font-display mt-7 text-xl text-wholara-cream sm:text-2xl">
-                {title}
-              </h3>
-              <p className="mt-3 text-sm leading-relaxed text-wholara-cream/85">
-                {body}
-              </p>
-            </li>
-          ))}
-        </ul>
-
-        <p className="mt-8 text-sm italic text-wholara-cream/75">
-          All plans include Ask Wholara access for the duration of your
-          program.
-        </p>
-      </div>
-    </section>
-  );
-}
-
-function EbooksSection() {
-  return (
-    <section className="relative bg-wholara-cream">
-      <div className="texture-grain absolute inset-0" aria-hidden />
-      <div className="relative mx-auto w-full max-w-5xl px-5 py-10 sm:px-8 sm:py-12 lg:py-14">
-        <div className="max-w-3xl">
-          <span className="text-xs font-medium uppercase tracking-[0.18em] text-wholara-terracotta">
-            Start Learning
-          </span>
-          <h2 className="font-display mt-3 text-3xl leading-tight text-wholara-green sm:text-4xl lg:text-5xl">
-            Dive Into the <span className="italic">Science.</span>
-          </h2>
-          <p className="mt-6 text-base leading-relaxed text-wholara-green/80 sm:text-lg">
-            Want to learn before you commit? Wholara&rsquo;s ebooks give you
-            the knowledge behind our approach &mdash; written by a Master
-            Nutrition Therapist in plain language you can actually use. No
-            fluff, no fads.
-          </p>
-        </div>
-
-        <div className="mt-10 flex justify-center">
-          <article className="relative flex w-full max-w-xl flex-col rounded-3xl border border-wholara-green/15 bg-wholara-cream-deep/50 p-7 text-center sm:p-9">
-            <span className="absolute right-4 top-4 inline-flex items-center rounded-full bg-wholara-terracotta px-2.5 py-1 text-[0.6rem] font-medium uppercase tracking-[0.2em] text-wholara-cream">
-              Coming Soon
-            </span>
-            <BookIcon
-              className="mx-auto mt-3 h-12 w-12 text-wholara-terracotta"
-              aria-hidden
-            />
-            <h3 className="font-display mt-5 text-2xl text-wholara-green sm:text-3xl">
-              Wholara Ebooks
-            </h3>
-            <p className="mx-auto mt-4 max-w-md text-base leading-relaxed text-wholara-green/80">
-              Evidence-based nutrition guides on inflammation, hormones, gut
-              health, energy, and more.
-            </p>
-            <div className="mt-7 flex justify-center">
-              <Link
-                href="/consultation"
-                className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-wholara-terracotta bg-transparent px-7 py-3 text-sm font-medium text-wholara-terracotta transition-colors hover:bg-wholara-terracotta/10"
-              >
-                Notify Me
-                <ArrowIcon className="h-3.5 w-3.5" />
-              </Link>
-            </div>
-          </article>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function BottomCta() {
-  return (
-    <section className="relative overflow-hidden bg-wholara-terracotta text-wholara-cream">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-25"
-        style={{
-          backgroundImage:
-            "repeating-linear-gradient(45deg, rgba(245,240,232,0.12) 0 1px, transparent 1px 18px)",
-        }}
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -top-24 -right-20 h-[360px] w-[360px] rounded-full bg-wholara-cream/15 blur-3xl"
-      />
-
-      <div className="relative mx-auto w-full max-w-5xl px-5 py-10 text-center sm:px-8 sm:py-12 lg:py-14">
-        <h2 className="font-display text-3xl leading-tight text-wholara-cream sm:text-4xl lg:text-5xl">
-          Still not sure?{" "}
-          <span className="italic">Let&rsquo;s figure it out together.</span>
-        </h2>
-        <div className="mt-9">
-          <Link
-            href="/consultation"
-            className="cta-shadow inline-flex items-center justify-center gap-2 rounded-full bg-wholara-green px-8 py-4 text-base font-medium text-wholara-cream transition-colors hover:bg-wholara-green-deep"
-          >
-            Book a Free Discovery Call
-            <ArrowIcon className="h-4 w-4" />
-          </Link>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function BookIcon({ className }: IconProps) {
+function CheckIcon({ className }: { className?: string }) {
   return (
     <svg
-      viewBox="0 0 24 24"
+      viewBox="0 0 20 20"
       fill="none"
       stroke="currentColor"
-      strokeWidth={1.6}
+      strokeWidth={2}
       strokeLinecap="round"
       strokeLinejoin="round"
       className={className}
+      aria-hidden="true"
     >
-      <path d="M4 5a2 2 0 0 1 2-2h11a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H6a2 2 0 0 1-2-2V5Z" />
-      <path d="M4 5a2 2 0 0 0 2 2h12" />
-      <path d="M8 11h7" />
-      <path d="M8 15h5" />
+      <path d="M4 10.5 8 14.5 16 5.5" />
     </svg>
   );
 }
