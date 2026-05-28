@@ -44,7 +44,7 @@ const services: ServiceCard[] = [
       "Monthly wellness newsletter programs",
       "Tiered packages from single sessions to full programs",
     ],
-    cta: { label: "Explore Corporate Options", href: "/corporate-wellness" },
+    cta: { label: "Inquire Now", href: "/consultation" },
   },
   {
     label: "Free · Always On",
