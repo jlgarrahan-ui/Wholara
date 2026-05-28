@@ -5,5 +5,5 @@ export const navLinks = [
   { label: "Ask Wholara", href: "/ask" },
   { label: "Packages", href: "/packages" },
   { label: "About", href: "/about" },
-  { label: "Work With Me", href: "/get-started" },
+  { label: "Work With Me", href: "/work-with-me" },
 ] as const;
