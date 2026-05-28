@@ -160,22 +160,22 @@ function Hero() {
 
 function ProblemSection() {
   return (
-    <section className="relative bg-wholara-cream">
+    <section className="relative bg-[#e8ede8]">
       <div className="texture-grain absolute inset-0" aria-hidden />
       <div className="relative mx-auto max-w-3xl px-8 py-20">
-        <p className="mb-4 text-xs font-medium uppercase tracking-widest text-[#C4673A]">
+        <p className="mb-4 text-xs font-medium uppercase tracking-widest text-[#2C4A35]">
           The Problem
         </p>
-        <h2 className="font-display text-3xl font-medium leading-tight text-[#2e3328] sm:text-4xl">
+        <h2 className="font-display text-3xl font-medium leading-tight text-[#2C4A35] sm:text-4xl">
           You&rsquo;ve already tried the obvious things.
         </h2>
-        <p className="mt-6 text-lg leading-relaxed text-[#55594d]">
+        <p className="mt-6 text-lg leading-relaxed text-[#3d4d3d]">
           You&rsquo;ve cleaned up your diet. You&rsquo;ve tried the supplements.
           Maybe you&rsquo;ve seen the doctors and run the labs and walked out
           with &ldquo;everything looks normal&rdquo; even though nothing feels
           normal.
         </p>
-        <p className="mt-5 text-lg leading-relaxed text-[#55594d]">
+        <p className="mt-5 text-lg leading-relaxed text-[#3d4d3d]">
           The problem isn&rsquo;t you. The problem is that nutrition advice
           today is built for everyone, which means it&rsquo;s built for no one.
           Generic plans. Conflicting research. Trends dressed up as science.
