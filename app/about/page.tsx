@@ -1,11 +1,178 @@
 import type { Metadata } from "next";
-import { ComingSoonPlaceholder } from "@/components/coming-soon-placeholder";
+import Image from "next/image";
+import Link from "next/link";
+import { SiteFooter } from "@/components/site-footer";
+import { SiteHeader } from "@/components/site-header";
 
 export const metadata: Metadata = {
   title: "About | Wholara",
-  description: "Learn about Wholara and the team behind it — coming soon.",
+  description:
+    "Julia Garrahan is a Master Nutrition Therapist who built Wholara after years of her own health struggles. Read her story.",
 };
 
 export default function AboutPage() {
-  return <ComingSoonPlaceholder eyebrow="About" />;
+  return (
+    <div className="flex min-h-full flex-col bg-[#F5F0E8] text-[#2C4A35]">
+      <SiteHeader />
+
+      <main className="flex flex-1 flex-col">
+        {/* 1. HERO */}
+        <section className="mx-auto grid w-full max-w-[1140px] grid-cols-1 items-center gap-[56px] px-8 pb-[70px] pt-[90px] md:grid-cols-[1.05fr_0.95fr]">
+          <div>
+            <p className="mb-6 text-xs font-medium uppercase tracking-widest text-[#C4673A]">
+              My Story
+            </p>
+            <h1
+              className="font-display font-medium leading-tight text-[#2C4A35]"
+              style={{ fontSize: "clamp(2.4rem, 5vw, 3.5rem)" }}
+            >
+              Tired of feeling like a{" "}
+              <em className="italic text-[#7D9B76]">stranger</em> in your own
+              body?
+            </h1>
+            <p className="mt-6 max-w-[480px] text-lg text-[#55594d]">
+              People ask me sometimes if I really get what it&apos;s like to
+              feel let down by your own body. I do. I&apos;ve spent most of my
+              life learning exactly how that feels.
+            </p>
+          </div>
+
+          <div className="relative row-start-1 md:row-start-auto md:justify-self-end">
+            <div
+              aria-hidden
+              className="absolute rounded-[14px] border border-[#7D9B76]"
+              style={{ top: 14, right: -14, bottom: -14, left: 14, zIndex: -1 }}
+            />
+            <Image
+              src="/wholara-julia-portrait.jpg"
+              alt="Julia Garrahan"
+              width={380}
+              height={500}
+              className="rounded-[14px] shadow-2xl"
+              style={{ objectFit: "cover" }}
+            />
+          </div>
+        </section>
+
+        {/* 2. STORY */}
+        <section className="mx-auto max-w-[680px] px-8 py-10">
+          <p className="font-display mb-6 text-2xl font-normal leading-relaxed">
+            I was a sick kid. In and out of the hospital for asthma, a long list
+            of foods I couldn&apos;t eat, and what felt like one infection after
+            another.
+          </p>
+          <p className="mb-6 text-lg leading-relaxed text-[#2e3328]">
+            At 14 I got an ulcerative colitis diagnosis, with a two-week
+            hospital stay to go with it. At 17 I was put on hormonal birth
+            control for acne and an irregular cycle, and not long after, the
+            panic attacks started. They got bad enough that I ended up on Xanax.
+            Then I came off the birth control, and they just stopped. That was
+            the first time it really hit me that maybe my body was trying to
+            tell me something.
+          </p>
+          <p className="mb-6 text-lg leading-relaxed text-[#2e3328]">
+            Then freshman year of college, I hit a wall. Not the kind you push
+            through. A fatigue and depression that just flattened me. I spent
+            months bouncing between antidepressants and barely keeping my grades
+            alive before anyone figured out it was Lyme disease, which meant
+            months of antibiotics. And the whole time I was still trying to be
+            an athlete, which felt almost like a joke given how exhausted I was.
+            Then came hypothyroidism. A year later, Babesia, a Lyme
+            co-infection, and yet another round of treatment.
+          </p>
+          <p className="mb-6 text-lg leading-relaxed text-[#2e3328]">
+            And it kept going. Five more years of it. Periods I couldn&apos;t
+            predict, a stomach that was never happy, Epstein-Barr flaring back
+            up, weight I couldn&apos;t explain, depression, a chronic fatigue
+            syndrome diagnosis, and underneath all of it, this constant feeling
+            of being a stranger in my own body.
+          </p>
+        </section>
+
+        {/* 3. PULL QUOTE */}
+        <section className="mx-auto my-14 max-w-[680px] px-8">
+          <blockquote className="font-display border-l-[3px] border-[#C4673A] pl-8 text-[1.7rem] font-normal italic leading-snug text-[#54614a]">
+            Then one morning I woke up and decided I was done living like that.
+          </blockquote>
+        </section>
+
+        {/* 4. STORY CONTINUED */}
+        <section className="mx-auto max-w-[680px] px-8 py-10">
+          <p className="mb-6 text-lg leading-relaxed text-[#2e3328]">
+            I&apos;d already seen every doctor and run every lab I could think
+            of. So I did the one thing still in my control. I went back to
+            school and went looking for the answers nobody had been able to give
+            me.
+          </p>
+
+          <div className="my-8 flex items-center justify-center gap-4 text-[#7D9B76]">
+            <span className="h-px flex-1 bg-current" aria-hidden />
+            <span aria-hidden>✦</span>
+            <span className="h-px flex-1 bg-current" aria-hidden />
+          </div>
+
+          <p className="mb-6 text-lg leading-relaxed text-[#2e3328]">
+            And slowly, things turned around. My energy came back, and then
+            some. My periods are regular for the first time in my life. My
+            stomach finally calmed down. But the change I didn&apos;t see coming
+            was the emotional one. I handle stress now in a way I genuinely
+            didn&apos;t think I had in me, the sense of humor I&apos;d written
+            off as gone is back, and most days my mood is the kind that rubs off
+            on people.
+          </p>
+          <p className="mb-6 text-lg leading-relaxed text-[#2e3328]">
+            All of it gave me a real soft spot for whatever you&apos;re carrying
+            right now, because odds are I&apos;ve carried some version of it
+            too.
+          </p>
+        </section>
+
+        {/* 5. CREDENTIALS BAND */}
+        <section className="mt-8 w-full bg-[#2C4A35] text-[#fdfbf7]">
+          <div className="mx-auto max-w-[760px] px-8 py-16 text-center">
+            <p className="mb-6 text-xs uppercase tracking-widest text-[#fdfbf7]/60">
+              Who&apos;s behind Wholara
+            </p>
+            <h2
+              className="font-display font-medium leading-snug"
+              style={{ fontSize: "clamp(1.7rem, 4vw, 2.3rem)" }}
+            >
+              These days, helping people get their energy, their confidence, and
+              their lives back is the whole point.
+            </h2>
+            <div className="mt-8 flex flex-wrap justify-center gap-4">
+              <span className="rounded-full border border-[#fdfbf7]/30 px-5 py-2 text-sm tracking-wide">
+                Master Nutrition Therapist
+              </span>
+              <span className="rounded-full border border-[#fdfbf7]/30 px-5 py-2 text-sm tracking-wide">
+                Certified Wellness &amp; Lifestyle Coach
+              </span>
+            </div>
+          </div>
+        </section>
+
+        {/* 6. CLOSING CTA */}
+        <section className="mx-auto max-w-[640px] px-8 py-24 text-center">
+          <h2
+            className="font-display font-medium leading-tight text-[#2e3328]"
+            style={{ fontSize: "clamp(2rem, 5vw, 2.8rem)" }}
+          >
+            If you&apos;re tired of feeling like a stranger in your own body,
+            you&apos;re in the right place.
+          </h2>
+          <p className="mt-6 text-lg text-[#55594d]">
+            Let&apos;s go find your answers, together.
+          </p>
+          <Link
+            href="/get-started"
+            className="mt-9 inline-block rounded-full bg-[#2C4A35] px-8 py-4 text-sm font-medium tracking-wide text-[#fdfbf7] transition-colors hover:bg-[#2e3328]"
+          >
+            Get Started
+          </Link>
+        </section>
+      </main>
+
+      <SiteFooter />
+    </div>
+  );
 }
