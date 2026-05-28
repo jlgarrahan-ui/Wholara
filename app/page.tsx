@@ -160,28 +160,43 @@ function Hero() {
 
 function ProblemSection() {
   return (
-    <section className="relative bg-[#e8ede8]">
-      <div className="texture-grain absolute inset-0" aria-hidden />
+    <section className="relative overflow-hidden bg-wholara-green text-wholara-cream">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-40"
+        style={{
+          backgroundImage:
+            "repeating-linear-gradient(45deg, rgba(245,240,232,0.05) 0 1px, transparent 1px 18px)",
+        }}
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-32 left-1/4 h-[420px] w-[420px] rounded-full bg-wholara-terracotta/15 blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-32 right-1/4 h-[420px] w-[420px] rounded-full bg-wholara-sage/20 blur-3xl"
+      />
       <div className="relative mx-auto max-w-3xl px-8 py-20">
-        <p className="mb-4 text-xs font-medium uppercase tracking-widest text-[#2C4A35]">
+        <p className="mb-4 text-xs font-medium uppercase tracking-widest text-[#C4673A]">
           The Problem
         </p>
-        <h2 className="font-display text-3xl font-medium leading-tight text-[#2C4A35] sm:text-4xl">
+        <h2 className="font-display text-3xl font-medium leading-tight text-[#fdfbf7] sm:text-4xl">
           You&rsquo;ve already tried the obvious things.
         </h2>
-        <p className="mt-6 text-lg leading-relaxed text-[#3d4d3d]">
+        <p className="mt-6 text-lg leading-relaxed text-[#fdfbf7]">
           You&rsquo;ve cleaned up your diet. You&rsquo;ve tried the supplements.
           Maybe you&rsquo;ve seen the doctors and run the labs and walked out
           with &ldquo;everything looks normal&rdquo; even though nothing feels
           normal.
         </p>
-        <p className="mt-5 text-lg leading-relaxed text-[#3d4d3d]">
+        <p className="mt-5 text-lg leading-relaxed text-[#fdfbf7]">
           The problem isn&rsquo;t you. The problem is that nutrition advice
           today is built for everyone, which means it&rsquo;s built for no one.
           Generic plans. Conflicting research. Trends dressed up as science.
           Whole categories of food turned into villains every two years.
         </p>
-        <p className="font-display mt-8 text-2xl font-medium italic leading-snug text-[#2C4A35]">
+        <p className="font-display mt-8 text-2xl font-medium italic leading-snug text-[#C4673A]">
           Wholara is the opposite of that.
         </p>
       </div>
