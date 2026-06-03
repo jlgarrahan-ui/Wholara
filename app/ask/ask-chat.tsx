@@ -103,18 +103,10 @@ const markdownComponents: Components = {
 const STORAGE_KEY = "wholara_conversation_id";
 const MODE_STORAGE_KEY = "wholara_response_mode";
 
-// Monthly free-question allowance. Tracked independently of conversation
-// history (clearing the chat does NOT reset these) and rolls over on its own
-// the first time the component mounts in a new calendar month.
-const QUESTION_COUNT_KEY = "wholara_question_count";
-const QUESTION_MONTH_KEY = "wholara_question_month";
-const MONTHLY_QUESTION_LIMIT = 10;
-
-// Current calendar month as "YYYY-MM" (local time).
-function currentMonth(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-}
+// Simple preview-question counter, persisted in localStorage. Counts only
+// user-initiated sends, never resets when the conversation is cleared.
+const QUESTION_COUNT_KEY = "wholara_q_count";
+const QUESTION_LIMIT = 5;
 
 // wholara_conversations.id is bigint server-side. The id is created by the
 // server and serialized as a numeric string. Any other shape in localStorage —
@@ -241,18 +233,9 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
     };
   }, []);
 
-  // Initialize the monthly question counter, rolling it over to 0 whenever we
-  // land in a new calendar month. Runs once on mount; the clear-conversation
-  // button intentionally never touches these keys.
+  // Load the preview question counter on mount (defaults to 0). The
+  // clear-conversation button intentionally never touches this key.
   useEffect(() => {
-    const month = currentMonth();
-    const savedMonth = window.localStorage.getItem(QUESTION_MONTH_KEY);
-    if (savedMonth !== month) {
-      window.localStorage.setItem(QUESTION_MONTH_KEY, month);
-      window.localStorage.setItem(QUESTION_COUNT_KEY, "0");
-      setQuestionCount(0);
-      return;
-    }
     const saved = Number.parseInt(
       window.localStorage.getItem(QUESTION_COUNT_KEY) ?? "0",
       10,
@@ -272,21 +255,21 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
   const send = useCallback(
     async (overrideText?: string, overrideMode?: ResponseMode) => {
       if (disabledReason) return;
-      // Hard stop once the monthly allowance is spent — never reaches the API.
-      if (questionCount >= MONTHLY_QUESTION_LIMIT) return;
+      // Block once the preview allowance is spent — never reaches the API.
+      if (questionCount >= QUESTION_LIMIT) return;
       const text = (overrideText ?? input).trim();
       if (!text || pending) return;
+
+      // Increment the preview counter FIRST, before doing anything else.
+      // Only user-initiated sends reach here; API responses never increment.
+      const nextCount = questionCount + 1;
+      setQuestionCount(nextCount);
+      window.localStorage.setItem(QUESTION_COUNT_KEY, String(nextCount));
+
       if (!overrideText) setInput("");
       setError(null);
       setPending(true);
       const modeToSend = overrideMode ?? responseMode;
-
-      // Count this user-sent question and persist before we hit the API.
-      // Assistant replies and "Simplify this"/"Go deeper" regenerations go
-      // through other code paths and never increment.
-      const nextCount = questionCount + 1;
-      setQuestionCount(nextCount);
-      window.localStorage.setItem(QUESTION_COUNT_KEY, String(nextCount));
 
       let rollback: ChatMessage[] | null = null;
       setMessages((prev) => {
@@ -485,8 +468,8 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
 
   const showWelcome = messages.length === 0 && !disabledReason;
   const showNewConversation = messages.length > 0;
-  const limitReached =
-    !disabledReason && questionCount >= MONTHLY_QUESTION_LIMIT;
+  const limitReached = !disabledReason && questionCount >= QUESTION_LIMIT;
+  const questionsRemaining = Math.max(0, QUESTION_LIMIT - questionCount);
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -564,10 +547,14 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
 
       {limitReached ? (
         <div className="mt-4 shrink-0 border-t border-wholara-green/10 pt-4">
-          <MonthlyLimitPrompt />
+          <PreviewLimitPrompt />
         </div>
       ) : (
         <div className="mt-4 shrink-0 border-t border-wholara-green/10 pt-4">
+          <p className="mb-2 text-center text-[0.65rem] text-wholara-green/45 sm:text-xs">
+            {questionsRemaining}{" "}
+            {questionsRemaining === 1 ? "question" : "questions"} remaining
+          </p>
           <div className="flex items-end gap-2 rounded-2xl border border-wholara-green/20 bg-wholara-cream px-3 py-2 shadow-sm focus-within:border-wholara-terracotta focus-within:ring-1 focus-within:ring-wholara-terracotta/30">
             <textarea
               ref={textareaRef}
@@ -614,30 +601,28 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
   );
 }
 
-function MonthlyLimitPrompt() {
+function PreviewLimitPrompt() {
   return (
     <div className="rounded-2xl border border-[#e4ddd0] bg-[#F5F0E8] p-8 text-center">
-      <p className="text-xs uppercase tracking-widest text-wholara-terracotta">
-        Monthly Preview Limit Reached
+      <p className="mb-3 text-xs uppercase tracking-widest text-[#C4673A]">
+        Preview Limit Reached
       </p>
-      <h3 className="font-display text-xl text-[#2C4A35]">
-        You&apos;ve used your 10 free questions this month
+      <h3 className="mb-2 font-display text-xl text-[#2C4A35]">
+        You&apos;ve used your 5 free preview questions
       </h3>
-      <p className="mt-2 text-sm text-[#55594d]">
-        Your questions reset at the start of next month. In the meantime, book a
-        free discovery call to get personalized support.
+      <p className="mb-6 text-sm text-[#55594d]">
+        Book a free discovery call to get personalized support, or check back
+        next month.
       </p>
-      <div className="mt-4">
-        <a
-          href="/consultation"
-          className="inline-flex items-center justify-center rounded-full bg-wholara-green-deep px-6 py-2.5 text-sm font-medium text-wholara-cream transition-colors hover:bg-wholara-green"
-        >
-          Book a Free Discovery Call
-        </a>
-      </div>
+      <a
+        href="/consultation"
+        className="inline-flex items-center justify-center rounded-full bg-wholara-green-deep px-6 py-2.5 text-sm font-medium text-wholara-cream transition-colors hover:bg-wholara-green"
+      >
+        Book a Free Discovery Call
+      </a>
       <a
         href="/resources"
-        className="mt-3 inline-block text-sm text-[#7D9B76] transition-colors hover:text-wholara-green"
+        className="mt-3 block text-sm text-[#7D9B76] transition-colors hover:text-wholara-green"
       >
         Or explore our free resources →
       </a>
