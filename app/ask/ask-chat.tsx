@@ -104,9 +104,17 @@ const STORAGE_KEY = "wholara_conversation_id";
 const MODE_STORAGE_KEY = "wholara_response_mode";
 
 // Simple preview-question counter, persisted in localStorage. Counts only
-// user-initiated sends, never resets when the conversation is cleared.
+// user-initiated sends, never resets when the conversation is cleared, and
+// rolls back to 0 the first time the component mounts in a new calendar month.
 const QUESTION_COUNT_KEY = "wholara_q_count";
+const QUESTION_MONTH_KEY = "wholara_q_month";
 const QUESTION_LIMIT = 5;
+
+// Current calendar month as "YYYY-MM" (local time).
+function currentMonth(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
 
 // wholara_conversations.id is bigint server-side. The id is created by the
 // server and serialized as a numeric string. Any other shape in localStorage —
@@ -233,9 +241,17 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
     };
   }, []);
 
-  // Load the preview question counter on mount (defaults to 0). The
-  // clear-conversation button intentionally never touches this key.
+  // Load the preview question counter on mount (defaults to 0), resetting it
+  // to 0 whenever we land in a new calendar month. The clear-conversation
+  // button intentionally never touches these keys.
   useEffect(() => {
+    const month = currentMonth();
+    if (window.localStorage.getItem(QUESTION_MONTH_KEY) !== month) {
+      window.localStorage.setItem(QUESTION_MONTH_KEY, month);
+      window.localStorage.setItem(QUESTION_COUNT_KEY, "0");
+      setQuestionCount(0);
+      return;
+    }
     const saved = Number.parseInt(
       window.localStorage.getItem(QUESTION_COUNT_KEY) ?? "0",
       10,
