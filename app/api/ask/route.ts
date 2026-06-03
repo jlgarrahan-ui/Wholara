@@ -13,6 +13,7 @@ const MATCH_COUNT = 20;
 const MATCH_THRESHOLD = 0.45;
 const MAX_TOOL_TURNS = 4;
 const MAX_OUTPUT_TOKENS = 8192;
+const DAILY_REQUEST_CAP = 200;
 
 const SIMPLE_MODE_INSTRUCTIONS =
   "Response style — SIMPLE MODE: Give practical, warm, easy-to-understand answers. Use plain language, avoid technical jargon, and focus on actionable steps the user can take today. Keep responses concise — 3-5 sentences or a short bullet list. Lead with what to do, not why.";
@@ -250,6 +251,52 @@ export async function POST(req: Request) {
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Supabase misconfigured";
     return NextResponse.json({ error: msg }, { status: 503 });
+  }
+
+  // Global daily cap across all users. Backed by a tiny per-day counter table:
+  // -- CREATE TABLE IF NOT EXISTS request_counts (date text PRIMARY KEY, count integer DEFAULT 0);
+  // If anything about this check fails, we deliberately fall through and let the
+  // request proceed — a DB hiccup must never lock everyone out of Ask Wholara.
+  const today = new Date().toISOString().slice(0, 10); // YYYY-MM-DD (UTC)
+  try {
+    const { data: countRow, error: countErr } = await supabase
+      .from("request_counts")
+      .select("count")
+      .eq("date", today)
+      .maybeSingle();
+    if (countErr) {
+      console.warn(
+        "[api/ask POST] request_counts read failed — allowing request",
+        countErr,
+      );
+    } else {
+      const current =
+        typeof countRow?.count === "number" ? countRow.count : 0;
+      if (current >= DAILY_REQUEST_CAP) {
+        return Response.json(
+          {
+            error: "daily_cap",
+            message:
+              "Ask Wholara is at capacity for today — check back tomorrow!",
+          },
+          { status: 429 },
+        );
+      }
+      const { error: upsertErr } = await supabase
+        .from("request_counts")
+        .upsert({ date: today, count: current + 1 }, { onConflict: "date" });
+      if (upsertErr) {
+        console.warn(
+          "[api/ask POST] request_counts upsert failed — allowing request",
+          upsertErr,
+        );
+      }
+    }
+  } catch (e) {
+    console.warn(
+      "[api/ask POST] daily cap check threw — allowing request",
+      e,
+    );
   }
 
   const incomingConvId = conversationId;

@@ -103,6 +103,19 @@ const markdownComponents: Components = {
 const STORAGE_KEY = "wholara_conversation_id";
 const MODE_STORAGE_KEY = "wholara_response_mode";
 
+// Monthly free-question allowance. Tracked independently of conversation
+// history (clearing the chat does NOT reset these) and rolls over on its own
+// the first time the component mounts in a new calendar month.
+const QUESTION_COUNT_KEY = "wholara_question_count";
+const QUESTION_MONTH_KEY = "wholara_question_month";
+const MONTHLY_QUESTION_LIMIT = 10;
+
+// Current calendar month as "YYYY-MM" (local time).
+function currentMonth(): string {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+}
+
 // wholara_conversations.id is bigint server-side. The id is created by the
 // server and serialized as a numeric string. Any other shape in localStorage —
 // most commonly a UUID left over from an older schema — must be discarded
@@ -163,6 +176,7 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [responseMode, setResponseMode] = useState<ResponseMode>("simple");
   const [regenerating, setRegenerating] = useState<ResponseMode | null>(null);
+  const [questionCount, setQuestionCount] = useState(0);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const conversationIdRef = useRef<string | null>(null);
@@ -227,6 +241,25 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
     };
   }, []);
 
+  // Initialize the monthly question counter, rolling it over to 0 whenever we
+  // land in a new calendar month. Runs once on mount; the clear-conversation
+  // button intentionally never touches these keys.
+  useEffect(() => {
+    const month = currentMonth();
+    const savedMonth = window.localStorage.getItem(QUESTION_MONTH_KEY);
+    if (savedMonth !== month) {
+      window.localStorage.setItem(QUESTION_MONTH_KEY, month);
+      window.localStorage.setItem(QUESTION_COUNT_KEY, "0");
+      setQuestionCount(0);
+      return;
+    }
+    const saved = Number.parseInt(
+      window.localStorage.getItem(QUESTION_COUNT_KEY) ?? "0",
+      10,
+    );
+    setQuestionCount(Number.isFinite(saved) && saved > 0 ? saved : 0);
+  }, []);
+
   const updateResponseMode = useCallback((next: ResponseMode) => {
     setResponseMode(next);
     window.localStorage.setItem(MODE_STORAGE_KEY, next);
@@ -239,12 +272,21 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
   const send = useCallback(
     async (overrideText?: string, overrideMode?: ResponseMode) => {
       if (disabledReason) return;
+      // Hard stop once the monthly allowance is spent — never reaches the API.
+      if (questionCount >= MONTHLY_QUESTION_LIMIT) return;
       const text = (overrideText ?? input).trim();
       if (!text || pending) return;
       if (!overrideText) setInput("");
       setError(null);
       setPending(true);
       const modeToSend = overrideMode ?? responseMode;
+
+      // Count this user-sent question and persist before we hit the API.
+      // Assistant replies and "Simplify this"/"Go deeper" regenerations go
+      // through other code paths and never increment.
+      const nextCount = questionCount + 1;
+      setQuestionCount(nextCount);
+      window.localStorage.setItem(QUESTION_COUNT_KEY, String(nextCount));
 
       let rollback: ChatMessage[] | null = null;
       setMessages((prev) => {
@@ -290,6 +332,11 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
             typeof (data as { error: unknown }).error === "string"
               ? (data as { error: string }).error
               : null;
+          if (fromJson === "daily_cap") {
+            throw new Error(
+              "Ask Wholara is at capacity for today. Check back tomorrow!",
+            );
+          }
           const fallback =
             rawText && rawText.length < 400 && !rawText.trim().startsWith("<")
               ? rawText.trim()
@@ -344,7 +391,7 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
         textareaRef.current?.focus();
       }
     },
-    [disabledReason, input, pending, responseMode],
+    [disabledReason, input, pending, questionCount, responseMode],
   );
 
   const handleFollowup = useCallback(
@@ -438,6 +485,8 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
 
   const showWelcome = messages.length === 0 && !disabledReason;
   const showNewConversation = messages.length > 0;
+  const limitReached =
+    !disabledReason && questionCount >= MONTHLY_QUESTION_LIMIT;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -513,41 +562,47 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
         </p>
       )}
 
-      <div className="mt-4 shrink-0 border-t border-wholara-green/10 pt-4">
-        <div className="flex items-end gap-2 rounded-2xl border border-wholara-green/20 bg-wholara-cream px-3 py-2 shadow-sm focus-within:border-wholara-terracotta focus-within:ring-1 focus-within:ring-wholara-terracotta/30">
-          <textarea
-            ref={textareaRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                void send();
-              }
-            }}
-            rows={1}
-            placeholder="Share what you're noticing…"
-            className="min-h-[2.5rem] max-h-40 flex-1 resize-none bg-transparent px-2 py-2 text-sm text-wholara-green placeholder:text-wholara-green/40 focus:outline-none sm:text-[0.9375rem]"
-            disabled={pending || Boolean(disabledReason)}
-            aria-label="Message Wholara"
-          />
-          <button
-            type="button"
-            onClick={() => void send()}
-            disabled={pending || !input.trim() || Boolean(disabledReason)}
-            aria-label="Send message"
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-wholara-terracotta text-wholara-cream transition-colors hover:bg-wholara-terracotta-deep disabled:pointer-events-none disabled:opacity-40 sm:h-11 sm:w-11"
-          >
-            <ArrowIcon className="h-4 w-4" />
-          </button>
+      {limitReached ? (
+        <div className="mt-4 shrink-0 border-t border-wholara-green/10 pt-4">
+          <MonthlyLimitPrompt />
         </div>
+      ) : (
+        <div className="mt-4 shrink-0 border-t border-wholara-green/10 pt-4">
+          <div className="flex items-end gap-2 rounded-2xl border border-wholara-green/20 bg-wholara-cream px-3 py-2 shadow-sm focus-within:border-wholara-terracotta focus-within:ring-1 focus-within:ring-wholara-terracotta/30">
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  void send();
+                }
+              }}
+              rows={1}
+              placeholder="Share what you're noticing…"
+              className="min-h-[2.5rem] max-h-40 flex-1 resize-none bg-transparent px-2 py-2 text-sm text-wholara-green placeholder:text-wholara-green/40 focus:outline-none sm:text-[0.9375rem]"
+              disabled={pending || Boolean(disabledReason)}
+              aria-label="Message Wholara"
+            />
+            <button
+              type="button"
+              onClick={() => void send()}
+              disabled={pending || !input.trim() || Boolean(disabledReason)}
+              aria-label="Send message"
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-wholara-terracotta text-wholara-cream transition-colors hover:bg-wholara-terracotta-deep disabled:pointer-events-none disabled:opacity-40 sm:h-11 sm:w-11"
+            >
+              <ArrowIcon className="h-4 w-4" />
+            </button>
+          </div>
 
-        <p className="mt-3 text-center text-[0.65rem] leading-snug text-wholara-green/55 sm:text-xs">
-          AI only — not medical advice, diagnosis, or treatment. Always confirm
-          with a licensed healthcare professional before acting on anything
-          here.
-        </p>
-      </div>
+          <p className="mt-3 text-center text-[0.65rem] leading-snug text-wholara-green/55 sm:text-xs">
+            AI only — not medical advice, diagnosis, or treatment. Always
+            confirm with a licensed healthcare professional before acting on
+            anything here.
+          </p>
+        </div>
+      )}
 
       {showResetConfirm && (
         <ResetConfirmDialog
@@ -555,6 +610,37 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
           onCancel={() => setShowResetConfirm(false)}
         />
       )}
+    </div>
+  );
+}
+
+function MonthlyLimitPrompt() {
+  return (
+    <div className="rounded-2xl border border-[#e4ddd0] bg-[#F5F0E8] p-8 text-center">
+      <p className="text-xs uppercase tracking-widest text-wholara-terracotta">
+        Monthly Preview Limit Reached
+      </p>
+      <h3 className="font-display text-xl text-[#2C4A35]">
+        You&apos;ve used your 10 free questions this month
+      </h3>
+      <p className="mt-2 text-sm text-[#55594d]">
+        Your questions reset at the start of next month. In the meantime, book a
+        free discovery call to get personalized support.
+      </p>
+      <div className="mt-4">
+        <a
+          href="/consultation"
+          className="inline-flex items-center justify-center rounded-full bg-wholara-green-deep px-6 py-2.5 text-sm font-medium text-wholara-cream transition-colors hover:bg-wholara-green"
+        >
+          Book a Free Discovery Call
+        </a>
+      </div>
+      <a
+        href="/resources"
+        className="mt-3 inline-block text-sm text-[#7D9B76] transition-colors hover:text-wholara-green"
+      >
+        Or explore our free resources →
+      </a>
     </div>
   );
 }
