@@ -630,24 +630,59 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
 }
 
 function PreviewLimitPrompt() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const startCheckout = useCallback(async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      const res = await fetch("/api/checkout/premium", { method: "POST" });
+      const data = (await res.json().catch(() => null)) as {
+        url?: string;
+        error?: string;
+      } | null;
+      if (!res.ok || !data?.url) {
+        throw new Error(
+          data?.error ?? "Could not start checkout. Please try again.",
+        );
+      }
+      // Hand off to Stripe's hosted checkout.
+      window.location.assign(data.url);
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? e.message
+          : "Could not start checkout. Please try again.",
+      );
+      setLoading(false);
+    }
+  }, []);
+
   return (
     <div className="rounded-2xl border border-[#e4ddd0] bg-[#F5F0E8] p-8 text-center">
       <p className="mb-3 text-xs uppercase tracking-widest text-[#C4673A]">
-        Preview Limit Reached
+        Ask Wholara Premium
       </p>
       <h3 className="mb-2 font-display text-xl text-[#2C4A35]">
-        You&apos;ve used your 5 free preview questions
+        You&apos;re out of free questions
       </h3>
       <p className="mb-6 text-sm text-[#55594d]">
-        Book a free discovery call to get personalized support, or check back
-        next month.
+        Upgrade to Ask Wholara Premium for unlimited questions — just $9/month.
       </p>
-      <a
-        href="/consultation"
-        className="inline-flex items-center justify-center rounded-full bg-wholara-green-deep px-6 py-2.5 text-sm font-medium text-wholara-cream transition-colors hover:bg-wholara-green"
+      <button
+        type="button"
+        onClick={startCheckout}
+        disabled={loading}
+        className="inline-flex items-center justify-center rounded-full bg-wholara-green-deep px-6 py-2.5 text-sm font-medium text-wholara-cream transition-colors hover:bg-wholara-green disabled:pointer-events-none disabled:opacity-60"
       >
-        Book a Free Discovery Call
-      </a>
+        {loading ? "Starting checkout…" : "Upgrade Here — $9/month"}
+      </button>
+      {error && (
+        <p className="mt-3 text-xs text-wholara-terracotta-deep" role="alert">
+          {error}
+        </p>
+      )}
       <a
         href="/resources"
         className="mt-3 block text-sm text-[#7D9B76] transition-colors hover:text-wholara-green"
