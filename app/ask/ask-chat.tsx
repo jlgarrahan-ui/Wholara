@@ -111,6 +111,10 @@ const QUESTION_COUNT_KEY = "wholara_q_count";
 const QUESTION_MONTH_KEY = "wholara_q_month";
 const QUESTION_LIMIT = 5;
 
+// Set to "1" once a user completes (and we verify) an Ask Wholara Premium
+// checkout. While set, the preview limit is not enforced — unlimited questions.
+const PREMIUM_KEY = "wholara_premium";
+
 // Current calendar month as "YYYY-MM" (local time).
 function currentMonth(): string {
   const now = new Date();
@@ -178,6 +182,7 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
   const [responseMode, setResponseMode] = useState<ResponseMode>("simple");
   const [regenerating, setRegenerating] = useState<ResponseMode | null>(null);
   const [questionCount, setQuestionCount] = useState(0);
+  const [isPremium, setIsPremium] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const conversationIdRef = useRef<string | null>(null);
@@ -260,6 +265,49 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
     setQuestionCount(Number.isFinite(saved) && saved > 0 ? saved : 0);
   }, []);
 
+  // Premium unlock. Read any stored flag on mount, and if we just came back
+  // from Stripe checkout (?session_id=…), verify it server-side before
+  // unlocking so a stray query param can't grant Premium for free.
+  useEffect(() => {
+    if (window.localStorage.getItem(PREMIUM_KEY) === "1") {
+      setIsPremium(true);
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const sessionId = params.get("session_id");
+    if (!sessionId) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(
+          `/api/checkout/verify?session_id=${encodeURIComponent(sessionId)}`,
+        );
+        const data = (await res.json().catch(() => null)) as {
+          premium?: boolean;
+        } | null;
+        if (!cancelled && res.ok && data?.premium) {
+          window.localStorage.setItem(PREMIUM_KEY, "1");
+          setIsPremium(true);
+        }
+      } catch {
+        // Network/verify failure — the upgrade prompt stays available to retry.
+      } finally {
+        // Strip the checkout params from the URL either way so a refresh
+        // doesn't re-trigger verification.
+        if (!cancelled) {
+          const url = new URL(window.location.href);
+          url.searchParams.delete("session_id");
+          url.searchParams.delete("upgrade");
+          window.history.replaceState({}, "", url.pathname + url.search);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const updateResponseMode = useCallback((next: ResponseMode) => {
     setResponseMode(next);
     window.localStorage.setItem(MODE_STORAGE_KEY, next);
@@ -273,10 +321,10 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
     async (overrideText?: string, overrideMode?: ResponseMode) => {
       if (disabledReason) return;
       // Block once the preview allowance is spent — never reaches the API.
-      // (A reply to a clarifying question won't be blocked: the count only
-      // ticks when a thorough answer is delivered, so an in-progress intake
-      // never hits the limit mid-conversation.)
-      if (questionCount >= QUESTION_LIMIT) return;
+      // Premium users are never limited. (A reply to a clarifying question
+      // won't be blocked either: the count only ticks when a thorough answer
+      // is delivered, so an in-progress intake never hits the limit mid-chat.)
+      if (!isPremium && questionCount >= QUESTION_LIMIT) return;
       const text = (overrideText ?? input).trim();
       if (!text || pending) return;
 
@@ -383,6 +431,7 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
         // clarifying/intake questions have no followups and never count.
         const lastMsg = next.messages[next.messages.length - 1];
         if (
+          !isPremium &&
           lastMsg &&
           lastMsg.role === "assistant" &&
           parseAssistantContent(lastMsg.content).followups.length > 0
@@ -402,7 +451,7 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
         textareaRef.current?.focus();
       }
     },
-    [disabledReason, input, pending, questionCount, responseMode],
+    [disabledReason, input, isPremium, pending, questionCount, responseMode],
   );
 
   const handleFollowup = useCallback(
@@ -496,7 +545,8 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
 
   const showWelcome = messages.length === 0 && !disabledReason;
   const showNewConversation = messages.length > 0;
-  const limitReached = !disabledReason && questionCount >= QUESTION_LIMIT;
+  const limitReached =
+    !disabledReason && !isPremium && questionCount >= QUESTION_LIMIT;
   const questionsRemaining = Math.max(0, QUESTION_LIMIT - questionCount);
 
   return (
@@ -580,8 +630,16 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
       ) : (
         <div className="mt-4 shrink-0 border-t border-wholara-green/10 pt-4">
           <p className="mb-2 text-center text-[0.65rem] text-wholara-green/45 sm:text-xs">
-            {questionsRemaining}{" "}
-            {questionsRemaining === 1 ? "question" : "questions"} remaining
+            {isPremium ? (
+              <span className="text-wholara-terracotta">
+                Premium · unlimited questions
+              </span>
+            ) : (
+              <>
+                {questionsRemaining}{" "}
+                {questionsRemaining === 1 ? "question" : "questions"} remaining
+              </>
+            )}
           </p>
           <div className="flex items-end gap-2 rounded-2xl border border-wholara-green/20 bg-wholara-cream px-3 py-2 shadow-sm focus-within:border-wholara-terracotta focus-within:ring-1 focus-within:ring-wholara-terracotta/30">
             <textarea

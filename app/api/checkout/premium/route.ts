@@ -40,7 +40,10 @@ export async function POST(req: Request) {
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
       allow_promotion_codes: true,
-      success_url: `${origin}/ask?upgrade=success`,
+      // {CHECKOUT_SESSION_ID} is a literal Stripe template — it must stay
+      // un-encoded so Stripe can substitute the real id on redirect. The /ask
+      // page verifies it server-side and then unlocks unlimited questions.
+      success_url: `${origin}/ask?upgrade=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/ask?upgrade=cancelled`,
     });
 
