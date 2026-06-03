@@ -6,11 +6,15 @@ export const runtime = "nodejs";
 // Creates a Stripe Checkout Session for the $9/mo Ask Wholara Premium
 // subscription and returns its hosted URL. The client redirects the browser to
 // that URL. Configure these in the environment (Vercel + .env.local):
-//   STRIPE_SECRET_KEY        — your Stripe secret key (sk_live_… / sk_test_…)
-//   STRIPE_PREMIUM_PRICE_ID  — the recurring Price id for the $9/mo plan (price_…)
+//   STRIPE_SECRET_KEY  — your Stripe secret key (sk_live_… / sk_test_…)
+//   STRIPE_PRICE_ID    — the recurring Price id for the $9/mo plan (price_…)
 export async function POST(req: Request) {
   const secretKey = process.env.STRIPE_SECRET_KEY?.trim();
-  const priceId = process.env.STRIPE_PREMIUM_PRICE_ID?.trim();
+  // Primary name is STRIPE_PRICE_ID; STRIPE_PREMIUM_PRICE_ID is accepted as a
+  // fallback so older env setups keep working.
+  const priceId = (
+    process.env.STRIPE_PRICE_ID ?? process.env.STRIPE_PREMIUM_PRICE_ID
+  )?.trim();
 
   if (!secretKey) {
     return NextResponse.json(
@@ -20,7 +24,7 @@ export async function POST(req: Request) {
   }
   if (!priceId) {
     return NextResponse.json(
-      { error: "STRIPE_PREMIUM_PRICE_ID is not set in the environment." },
+      { error: "STRIPE_PRICE_ID is not set in the environment." },
       { status: 503 },
     );
   }
