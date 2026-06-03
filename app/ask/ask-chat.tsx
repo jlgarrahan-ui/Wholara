@@ -103,8 +103,9 @@ const markdownComponents: Components = {
 const STORAGE_KEY = "wholara_conversation_id";
 const MODE_STORAGE_KEY = "wholara_response_mode";
 
-// Simple preview-question counter, persisted in localStorage. Counts only
-// user-initiated sends, never resets when the conversation is cleared, and
+// Simple preview-question counter, persisted in localStorage. Counts only the
+// thorough synthesis answers Wholara delivers (replies to its intake/clarifying
+// questions do NOT count), never resets when the conversation is cleared, and
 // rolls back to 0 the first time the component mounts in a new calendar month.
 const QUESTION_COUNT_KEY = "wholara_q_count";
 const QUESTION_MONTH_KEY = "wholara_q_month";
@@ -272,15 +273,12 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
     async (overrideText?: string, overrideMode?: ResponseMode) => {
       if (disabledReason) return;
       // Block once the preview allowance is spent — never reaches the API.
+      // (A reply to a clarifying question won't be blocked: the count only
+      // ticks when a thorough answer is delivered, so an in-progress intake
+      // never hits the limit mid-conversation.)
       if (questionCount >= QUESTION_LIMIT) return;
       const text = (overrideText ?? input).trim();
       if (!text || pending) return;
-
-      // Increment the preview counter FIRST, before doing anything else.
-      // Only user-initiated sends reach here; API responses never increment.
-      const nextCount = questionCount + 1;
-      setQuestionCount(nextCount);
-      window.localStorage.setItem(QUESTION_COUNT_KEY, String(nextCount));
 
       if (!overrideText) setInput("");
       setError(null);
@@ -379,6 +377,20 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
         setConversationId(receivedId);
         window.localStorage.setItem(STORAGE_KEY, receivedId);
         setMessages(next.messages);
+
+        // Count this against the preview allowance ONLY when Wholara delivered
+        // a thorough synthesis answer (one carrying a <followups> block). Plain
+        // clarifying/intake questions have no followups and never count.
+        const lastMsg = next.messages[next.messages.length - 1];
+        if (
+          lastMsg &&
+          lastMsg.role === "assistant" &&
+          parseAssistantContent(lastMsg.content).followups.length > 0
+        ) {
+          const updated = questionCount + 1;
+          setQuestionCount(updated);
+          window.localStorage.setItem(QUESTION_COUNT_KEY, String(updated));
+        }
       } catch (e) {
         setError(e instanceof Error ? e.message : "Something went wrong");
         if (rollback) setMessages(rollback);
