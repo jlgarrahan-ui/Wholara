@@ -11,9 +11,17 @@ type Choice = "accepted" | "declined";
 
 type AskConsentGateProps = {
   setupMessage: string | null;
+  /** Server-verified: does this user have an active paid subscription? */
+  isSubscribed: boolean;
+  /** Whether a Supabase session exists (drives the upgrade CTA's destination). */
+  isLoggedIn: boolean;
 };
 
-export function AskConsentGate({ setupMessage }: AskConsentGateProps) {
+export function AskConsentGate({
+  setupMessage,
+  isSubscribed,
+  isLoggedIn,
+}: AskConsentGateProps) {
   const [phase, setPhase] = useState<"hydrating" | "pending" | Choice>("hydrating");
 
   useEffect(() => {
@@ -106,5 +114,11 @@ export function AskConsentGate({ setupMessage }: AskConsentGateProps) {
     );
   }
 
-  return <AskChat disabledReason={setupMessage} />;
+  return (
+    <AskChat
+      disabledReason={setupMessage}
+      isSubscribed={isSubscribed}
+      isLoggedIn={isLoggedIn}
+    />
+  );
 }

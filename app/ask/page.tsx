@@ -1,12 +1,36 @@
+import Link from "next/link";
 import { AskConsentGate } from "./ask-consent-gate";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { getAskSetupMessage } from "@/lib/supabase/ask-config";
+import { createServerSupabase } from "@/lib/supabase/server";
+import { getSubscriptionRow, isSubscriptionActive } from "@/lib/subscription";
 
 export const dynamic = "force-dynamic";
 
-export default function AskPage() {
+// Resolve the logged-in user and whether they have an active subscription.
+// Wrapped so a missing/misconfigured auth setup degrades to "logged out, free
+// preview" rather than crashing the page.
+async function getSessionState(): Promise<{
+  email: string | null;
+  subscribed: boolean;
+}> {
+  try {
+    const supabase = await createServerSupabase();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { email: null, subscribed: false };
+    const row = await getSubscriptionRow(user.id);
+    return { email: user.email ?? null, subscribed: isSubscriptionActive(row) };
+  } catch {
+    return { email: null, subscribed: false };
+  }
+}
+
+export default async function AskPage() {
   const setupMessage = getAskSetupMessage();
+  const { email, subscribed } = await getSessionState();
 
   return (
     <div className="flex min-h-full flex-col bg-wholara-cream text-wholara-green">
@@ -28,6 +52,37 @@ export default function AskPage() {
         </div>
 
         <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col">
+          <div className="mb-3 flex flex-wrap items-center justify-end gap-x-4 gap-y-1 text-xs text-wholara-green/60 sm:text-[0.8125rem]">
+            {email ? (
+              <>
+                <span className="mr-auto truncate">
+                  Logged in as{" "}
+                  <span className="font-medium text-wholara-green">{email}</span>
+                </span>
+                <Link
+                  href="/account"
+                  className="font-medium text-wholara-green/80 transition-colors hover:text-wholara-terracotta-deep"
+                >
+                  Account
+                </Link>
+                <form action="/auth/signout" method="post" className="contents">
+                  <button
+                    type="submit"
+                    className="font-medium text-wholara-green/80 transition-colors hover:text-wholara-terracotta-deep"
+                  >
+                    Log out
+                  </button>
+                </form>
+              </>
+            ) : (
+              <Link
+                href="/login?next=/ask"
+                className="font-medium text-wholara-green/80 transition-colors hover:text-wholara-terracotta-deep"
+              >
+                Log in
+              </Link>
+            )}
+          </div>
           <div className="mb-6">
             <h1 className="font-display text-3xl font-light text-wholara-green sm:text-4xl">
               Ask Wholara
@@ -39,7 +94,11 @@ export default function AskPage() {
             </p>
           </div>
           <div className="flex h-[600px] flex-col rounded-3xl border border-wholara-green/10 bg-wholara-cream-deep/30 p-4 sm:h-[min(75vh,720px)] sm:p-6">
-            <AskConsentGate setupMessage={setupMessage} />
+            <AskConsentGate
+              setupMessage={setupMessage}
+              isSubscribed={subscribed}
+              isLoggedIn={Boolean(email)}
+            />
           </div>
         </div>
       </main>

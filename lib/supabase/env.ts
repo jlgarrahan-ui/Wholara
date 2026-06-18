@@ -6,6 +6,17 @@ export function getSupabaseProjectUrl(): string | undefined {
 }
 
 /**
+ * Public anon/publishable key (browser + server). Safe to expose to the client.
+ * Used by the @supabase/ssr auth clients. Dashboard: Settings → API Keys.
+ */
+export function getSupabaseAnonKey(): string | undefined {
+  return (
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim() ||
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY?.trim()
+  );
+}
+
+/**
  * Server-only elevated key (bypasses RLS). Accepts legacy and common aliases.
  * Supabase dashboard: Settings → API Keys → secret key, or Legacy service_role JWT.
  */

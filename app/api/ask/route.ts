@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
 import { getServiceSupabase } from "@/lib/supabase/service";
+import { createServerSupabase } from "@/lib/supabase/server";
+import { userHasActiveSubscription } from "@/lib/subscription";
 import {
   WHOLARA_SYSTEM_PROMPT,
   WHOLARA_INTAKE_INSTRUCTIONS,
@@ -228,6 +230,27 @@ export async function POST(req: Request) {
 
   if (!message) {
     return NextResponse.json({ error: "message is required" }, { status: 400 });
+  }
+
+  // Server-authoritative paid access. A logged-in user with an active Stripe
+  // subscription gets unlimited questions; everyone else falls back to the
+  // client-side 5-question monthly preview. The client is NEVER trusted for
+  // this — the `subscribed` flag we return is the source of truth the UI uses
+  // to decide whether to keep counting preview questions.
+  let subscribed = false;
+  try {
+    const authClient = await createServerSupabase();
+    const {
+      data: { user },
+    } = await authClient.auth.getUser();
+    if (user) {
+      subscribed = await userHasActiveSubscription(user.id);
+    }
+  } catch (e) {
+    console.warn(
+      "[api/ask POST] subscription check failed — treating as free preview",
+      e,
+    );
   }
 
   const anthropicKey = process.env.ANTHROPIC_API_KEY?.trim();
@@ -493,5 +516,6 @@ export async function POST(req: Request) {
   return NextResponse.json({
     conversationId: convId,
     messages: finalRows as ChatMessageRow[],
+    subscribed,
   });
 }

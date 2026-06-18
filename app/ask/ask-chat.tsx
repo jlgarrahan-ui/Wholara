@@ -111,10 +111,6 @@ const QUESTION_COUNT_KEY = "wholara_q_count";
 const QUESTION_MONTH_KEY = "wholara_q_month";
 const QUESTION_LIMIT = 5;
 
-// Set to "1" once a user completes (and we verify) an Ask Wholara Premium
-// checkout. While set, the preview limit is not enforced — unlimited questions.
-const PREMIUM_KEY = "wholara_premium";
-
 // Current calendar month as "YYYY-MM" (local time).
 function currentMonth(): string {
   const now = new Date();
@@ -144,6 +140,14 @@ export type ResponseMode = "simple" | "deep";
 type AskChatProps = {
   /** When set, chat is disabled and this explains how to fix configuration. */
   disabledReason?: string | null;
+  /**
+   * Server-verified active paid subscription. This is the ONLY source of truth
+   * for unlimited access — never a client-stored flag — so paid access can't be
+   * spoofed from the browser.
+   */
+  isSubscribed?: boolean;
+  /** Whether a Supabase session exists (drives where the upgrade CTA points). */
+  isLoggedIn?: boolean;
 };
 
 type ParsedAssistant = {
@@ -172,7 +176,13 @@ function parseAssistantContent(raw: string): ParsedAssistant {
   return { body, followups };
 }
 
-export function AskChat({ disabledReason = null }: AskChatProps) {
+export function AskChat({
+  disabledReason = null,
+  isSubscribed = false,
+  isLoggedIn = false,
+}: AskChatProps) {
+  // Unlimited access is decided server-side and passed in as a prop.
+  const isPremium = isSubscribed;
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [input, setInput] = useState("");
@@ -182,7 +192,6 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
   const [responseMode, setResponseMode] = useState<ResponseMode>("simple");
   const [regenerating, setRegenerating] = useState<ResponseMode | null>(null);
   const [questionCount, setQuestionCount] = useState(0);
-  const [isPremium, setIsPremium] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const conversationIdRef = useRef<string | null>(null);
@@ -263,49 +272,6 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
       10,
     );
     setQuestionCount(Number.isFinite(saved) && saved > 0 ? saved : 0);
-  }, []);
-
-  // Premium unlock. Read any stored flag on mount, and if we just came back
-  // from Stripe checkout (?session_id=…), verify it server-side before
-  // unlocking so a stray query param can't grant Premium for free.
-  useEffect(() => {
-    if (window.localStorage.getItem(PREMIUM_KEY) === "1") {
-      setIsPremium(true);
-    }
-
-    const params = new URLSearchParams(window.location.search);
-    const sessionId = params.get("session_id");
-    if (!sessionId) return;
-
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch(
-          `/api/checkout/verify?session_id=${encodeURIComponent(sessionId)}`,
-        );
-        const data = (await res.json().catch(() => null)) as {
-          premium?: boolean;
-        } | null;
-        if (!cancelled && res.ok && data?.premium) {
-          window.localStorage.setItem(PREMIUM_KEY, "1");
-          setIsPremium(true);
-        }
-      } catch {
-        // Network/verify failure — the upgrade prompt stays available to retry.
-      } finally {
-        // Strip the checkout params from the URL either way so a refresh
-        // doesn't re-trigger verification.
-        if (!cancelled) {
-          const url = new URL(window.location.href);
-          url.searchParams.delete("session_id");
-          url.searchParams.delete("upgrade");
-          window.history.replaceState({}, "", url.pathname + url.search);
-        }
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
   }, []);
 
   const updateResponseMode = useCallback((next: ResponseMode) => {
@@ -625,14 +591,14 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
 
       {limitReached ? (
         <div className="mt-4 shrink-0 border-t border-wholara-green/10 pt-4">
-          <PreviewLimitPrompt />
+          <PreviewLimitPrompt isLoggedIn={isLoggedIn} />
         </div>
       ) : (
         <div className="mt-4 shrink-0 border-t border-wholara-green/10 pt-4">
           <p className="mb-2 text-center text-[0.65rem] text-wholara-green/45 sm:text-xs">
             {isPremium ? (
               <span className="text-wholara-terracotta">
-                Premium · unlimited questions
+                Unlimited questions
               </span>
             ) : (
               <>
@@ -687,65 +653,28 @@ export function AskChat({ disabledReason = null }: AskChatProps) {
   );
 }
 
-function PreviewLimitPrompt() {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const startCheckout = useCallback(async () => {
-    setError(null);
-    setLoading(true);
-    try {
-      const res = await fetch("/api/checkout/premium", { method: "POST" });
-      const data = (await res.json().catch(() => null)) as {
-        url?: string;
-        error?: string;
-      } | null;
-      if (!res.ok || !data?.url) {
-        throw new Error(
-          data?.error ?? "Could not start checkout. Please try again.",
-        );
-      }
-      // Hand off to Stripe's hosted checkout.
-      window.location.assign(data.url);
-    } catch (e) {
-      setError(
-        e instanceof Error
-          ? e.message
-          : "Could not start checkout. Please try again.",
-      );
-      setLoading(false);
-    }
-  }, []);
+function PreviewLimitPrompt({ isLoggedIn }: { isLoggedIn: boolean }) {
+  // Logged-in users go straight to the account page to subscribe; logged-out
+  // users log in first (and land on /account afterward). Actual paid access is
+  // always granted server-side via Stripe + the subscriptions table.
+  const href = isLoggedIn ? "/account" : "/login?next=/account";
 
   return (
-    <div className="rounded-2xl border border-[#e4ddd0] bg-[#F5F0E8] p-8 text-center">
-      <p className="mb-3 text-xs uppercase tracking-widest text-[#C4673A]">
-        Ask Wholara Premium
-      </p>
-      <h3 className="mb-2 font-display text-xl text-[#2C4A35]">
-        You&apos;re out of free questions
+    <div className="rounded-2xl border border-wholara-cream-deep bg-wholara-cream p-8 text-center">
+      <h3 className="mb-3 font-display text-xl text-wholara-green">
+        That&rsquo;s your five free questions for the month.
       </h3>
-      <p className="mb-6 text-sm text-[#55594d]">
-        Upgrade to Ask Wholara Premium for unlimited questions — just $9/month.
+      <p className="mb-6 text-sm leading-relaxed text-wholara-green/80">
+        If Ask Wholara has been useful, you can keep going for $9 a month.
+        Unlimited questions, anytime something comes up. Your gut, your energy,
+        your hormones, the weird thing your body&rsquo;s been doing lately. Ask
+        away.
       </p>
-      <button
-        type="button"
-        onClick={startCheckout}
-        disabled={loading}
-        className="inline-flex items-center justify-center rounded-full bg-wholara-green-deep px-6 py-2.5 text-sm font-medium text-wholara-cream transition-colors hover:bg-wholara-green disabled:pointer-events-none disabled:opacity-60"
-      >
-        {loading ? "Starting checkout…" : "Upgrade Here — $9/month"}
-      </button>
-      {error && (
-        <p className="mt-3 text-xs text-wholara-terracotta-deep" role="alert">
-          {error}
-        </p>
-      )}
       <a
-        href="/resources"
-        className="mt-3 block text-sm text-[#7D9B76] transition-colors hover:text-wholara-green"
+        href={href}
+        className="inline-flex items-center justify-center rounded-full bg-wholara-terracotta px-6 py-2.5 text-sm font-medium text-wholara-cream transition-colors hover:bg-wholara-terracotta-deep"
       >
-        Or explore our free resources →
+        Create an account and subscribe
       </a>
     </div>
   );
